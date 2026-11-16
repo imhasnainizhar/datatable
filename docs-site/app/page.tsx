@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CopyButton } from "@/components/CopyButton";
 import { highlightToHtml } from "@/components/Mdx";
-import { GITHUB, VERSION } from "@/lib/nav";
+import { GITHUB } from "@/lib/nav";
 
 export const metadata: Metadata = {
   title: { absolute: "datatable: the flexible table for Rust" },
@@ -114,33 +114,26 @@ export default async function Home() {
   return (
     <main className="landing" id="content">
       <section className="hero">
-        <div className="hero-grid-bg" aria-hidden="true" />
-        <Link className="hero-pill" href="/whats-new/">
-          <span className="hero-pill-tag">New</span> datatable {VERSION} is out <span aria-hidden="true">→</span>
-        </Link>
+        <svg className="hero-mark" viewBox="0 0 1200 230" aria-hidden="true" focusable="false">
+          <text x="600" y="205" textAnchor="middle" textLength="1180" lengthAdjust="spacingAndGlyphs">
+            DATATABLE
+          </text>
+        </svg>
         <h1 className="hero-title">
           The flexible table
           <br />
-          <span className="hero-accent">for Rust</span>
+          for Rust
         </h1>
         <p className="hero-sub">
-          One dynamic container that works as an array, a dictionary, a record or a set. Inspired by Lua tables,
-          built for speed, with no <code>unsafe</code> code.
+          One dynamic container for arrays, dictionaries, records and sets. datatable gives you{" "}
+          <strong>Lua-inspired tables</strong> with the speed of compiled Rust and no <code>unsafe</code> code.
         </p>
-        <div className="hero-actions">
-          <Link className="cta cta-primary" href="/getting-started/installation/">
-            Get Started
-          </Link>
-          <Link className="cta cta-secondary" href="/getting-started/quick-start/">
-            Take the Quick Start
-          </Link>
-        </div>
         <div className="hero-install">
           <span className="hero-install-prompt" aria-hidden="true">
             $
           </span>
           <code>{INSTALL}</code>
-          <CopyButton text={INSTALL} />
+          <CopyButton text={INSTALL} icon />
         </div>
       </section>
 
