@@ -127,6 +127,14 @@ export default async function Home() {
         <p className="hero-sub">
           <strong>One fast, dynamic table</strong> for arrays, dictionaries, records and sets.
         </p>
+        <div className="hero-actions">
+          <Link className="cta cta-primary" href="/getting-started/installation/">
+            Get Started
+          </Link>
+          <Link className="cta cta-secondary" href="/api/">
+            API Reference
+          </Link>
+        </div>
         <div className="hero-install">
           <span className="hero-install-prompt" aria-hidden="true">
             $

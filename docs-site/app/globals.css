@@ -1743,3 +1743,73 @@ pre,
 samp {
   font-family: var(--font-mono);
 }
+
+/* ---------- Call-to-action buttons (hero and closing section) ---------- */
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 36px;
+}
+
+.hero .hero-actions + .hero-install {
+  margin-top: 24px;
+}
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  min-width: 160px;
+  padding: 0 24px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  font-size: 1rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.cta-primary {
+  background: var(--fg);
+  border-color: var(--fg);
+  color: var(--bg);
+}
+
+.cta-primary:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.cta-secondary {
+  background: var(--bg);
+  color: var(--fg);
+}
+
+.cta-secondary:hover {
+  border-color: var(--fg-faint);
+  background: var(--bg-hover);
+  color: var(--fg);
+}
+
+.final-cta {
+  border-top: 1px solid var(--border);
+}
+
+.final-cta .hero-actions {
+  margin-top: 32px;
+}
+
+@media (max-width: 600px) {
+  .hero-actions {
+    width: 100%;
+  }
+  .cta {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}
