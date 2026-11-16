@@ -7,7 +7,7 @@ import { GITHUB } from "@/lib/nav";
 export const metadata: Metadata = {
   title: { absolute: "datatable: the flexible table for Rust" },
   description:
-    "One dynamic container for Rust that works as an array, a dictionary, a record or a set. Inspired by Lua tables, built for speed, with no unsafe code.",
+    "One fast, dynamic table for Rust that works as an array, a dictionary, a record or a set.",
 };
 
 const INSTALL = "cargo add datatable --git https://github.com/imhasnainizhar/datatable";
@@ -36,7 +36,7 @@ const FEATURES = [
   },
   {
     title: "Sequence library",
-    text: "push, pop, insert, remove, concat, sort and move ranges, with 1-based positions inspired by Lua.",
+    text: "push, pop, insert, remove, concat, sort and move ranges, with 1-based positions.",
     href: "/guides/sequences/",
   },
   {
@@ -56,14 +56,14 @@ const FEATURES = [
   },
   {
     title: "No surprises",
-    text: "Typed errors instead of panics, a deterministic traversal order, and no unsafe code anywhere.",
+    text: "Typed errors instead of panics, and a traversal order you can rely on.",
     href: "/guides/error-handling/",
   },
 ];
 
 const STATS = [
   { value: "1.1 ns", label: "to overwrite a sequence slot" },
-  { value: "0", label: "lines of unsafe code" },
+  { value: "O(1)", label: "length, append and lookup" },
   { value: "58", label: "doc examples compiled and run" },
 ];
 
@@ -82,7 +82,7 @@ const FOOTER = [
       ["Sequences", "/guides/sequences/"],
       ["Iteration", "/guides/iteration/"],
       ["Performance", "/guides/performance/"],
-      ["Coming from Lua", "/guides/coming-from-lua/"],
+      ["Error Handling", "/guides/error-handling/"],
     ],
   },
   {
@@ -125,8 +125,7 @@ export default async function Home() {
           for Rust
         </h1>
         <p className="hero-sub">
-          One dynamic container for arrays, dictionaries, records and sets. datatable gives you{" "}
-          <strong>Lua-inspired tables</strong> with the speed of compiled Rust and no <code>unsafe</code> code.
+          <strong>One fast, dynamic table</strong> for arrays, dictionaries, records and sets.
         </p>
         <div className="hero-install">
           <span className="hero-install-prompt" aria-hidden="true">
