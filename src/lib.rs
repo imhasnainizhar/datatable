@@ -1,4 +1,4 @@
-//! A Lua-inspired table: one flexible data structure.
+//! One fast, dynamic table for Rust: a single data structure.
 //!
 //! A [`Table`] can stand in for:
 //!
@@ -25,10 +25,10 @@
 //! assert_eq!(point.field_count(), 2);
 //! ```
 //!
-//! Sequence positions are 1-based, as in Lua. Assigning `nil` deletes a
-//! field. See [`Table`] for the full API, which mirrors Lua's `table`
-//! library (`insert`, `remove`, `concat`, `unpack`, `pack`, `move`, `sort`)
-//! together with `pairs`, `ipairs` and `next`.
+//! Sequence positions are 1-based. Assigning `nil` deletes a field. See
+//! [`Table`] for the full API: sequence operations (`insert`, `remove`,
+//! `concat`, `unpack`, `pack`, `move_within`, `sort`) and traversal
+//! (`pairs`, `ipairs`, `next`).
 
 #![forbid(unsafe_code)]
 
@@ -45,7 +45,7 @@ pub use key::{AsKey, Key, KeyRef};
 pub use table::{Table, TableRef};
 pub use value::Value;
 
-/// Build a [`Table`] like a Lua table constructor.
+/// Build a [`Table`] from a list of values or `key => value` pairs.
 ///
 /// ```
 /// use flextable::table;
@@ -88,7 +88,7 @@ mod tests {
     }
 
     #[test]
-    fn value_truthiness_matches_lua() {
+    fn value_truthiness() {
         assert!(!Value::Nil.is_truthy());
         assert!(!Value::from(false).is_truthy());
         assert!(Value::from(true).is_truthy());

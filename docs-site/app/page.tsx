@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     "One fast, dynamic table for Rust that works as an array, a dictionary, a record or a set.",
 };
 
-const INSTALL = "cargo add flextable --git https://github.com/imhasnainizhar/datatable";
+const INSTALL = "cargo add flextable";
 
 const SHOWCASE = `use flextable::{table, Table, Value};
 

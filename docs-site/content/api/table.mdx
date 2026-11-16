@@ -212,7 +212,7 @@ pub fn len(&self) -> usize
 
 <Badges items={["O(1)"]} />
 
-Lua's `#t`: the length of the sequence. With holes, a border: `t[len]` is set and `t[len + 1]` is nil.
+The length of the sequence. With holes, a border: `t[len]` is set and `t[len + 1]` is nil.
 
 ### `is_empty`
 
@@ -266,7 +266,7 @@ pub fn push(&self, value: impl Into<Value>) -> Result<()>
 
 <Badges items={["O(1) amortized"]} />
 
-Appends: `t[#t + 1] = value`. Pushing nil does nothing. Never fails.
+Appends: `t[len + 1] = value`. Pushing nil does nothing. Never fails.
 
 ### `pop`
 
@@ -476,7 +476,7 @@ An address unique to this table while it is alive. Useful as an identity in logs
 pub fn dump(&self) -> String
 ```
 
-Renders the contents as a Lua-style constructor for debugging. Tables already being printed show as `<cycle>`.
+Renders the contents as a table literal for debugging. Tables already being printed show as `<cycle>`.
 
 ```rust
 use flextable::table;

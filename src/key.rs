@@ -1,6 +1,6 @@
 //! Hashable keys for tables.
 //!
-//! Lua forbids `nil` and NaN keys. Numeric keys are canonical: a float with
+//! `nil` and NaN are never valid keys. Numeric keys are canonical: a float with
 //! an exact integer value (`1.0`) is the same key as the integer (`1`).
 //!
 //! Three pieces live here:
@@ -208,7 +208,7 @@ macro_rules! wide_int_as_key {
             fn key_ref(&self) -> Result<KeyRef<'_>> {
                 match i64::try_from(*self) {
                     Ok(i) => Ok(KeyRef::Integer(i)),
-                    // Beyond i64: the nearest float, as Lua would store it.
+                    // Beyond i64: the nearest float.
                     Err(_) => number_key(*self as f64),
                 }
             }

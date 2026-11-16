@@ -11,7 +11,7 @@ Use `pairs`/`ipairs` by default. Switch to `borrow().iter()` or `for_each` in ho
 
 ## Order
 
-All full traversals use the same order: sequence keys first, ascending, then the other keys in the order they were first inserted. The order is deterministic, unlike Lua's.
+All full traversals use the same order: sequence keys first, ascending, then the other keys in the order they were first inserted. The order is deterministic.
 
 ```rust
 use flextable::table;

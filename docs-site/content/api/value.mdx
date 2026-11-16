@@ -45,7 +45,7 @@ pub fn is_nil(&self) -> bool
 pub fn is_truthy(&self) -> bool
 ```
 
-Lua truthiness: only `Nil` and `Boolean(false)` are false. `0` and `""` are truthy.
+Truthiness: only `Nil` and `Boolean(false)` are false. `0` and `""` are truthy.
 
 ### `is_number`
 
@@ -120,7 +120,7 @@ assert_eq!(Value::from("10").as_integer(), None);   // no string coercion
 
 ### Equality
 
-`==` follows Lua: integers and floats are equal when they represent the same number exactly (`1 == 1.0`, but `2^53 + 1` is not equal to the float `2^53`), strings compare by content, tables by identity. NaN is not equal to itself.
+`==` compares numbers exactly: integers and floats are equal when they represent the same number exactly (`1 == 1.0`, but `2^53 + 1` is not equal to the float `2^53`), strings compare by content, tables by identity. NaN is not equal to itself.
 
 ### `lua_cmp`
 
@@ -150,7 +150,7 @@ assert!(Value::from(true).try_cmp(&Value::from(false)).is_err());
 
 ## Formatting
 
-`Display` is Lua's `tostring`: strings print without quotes, whole-number floats keep `.0`, and tables print as `table: 0x…`. `Debug` is the same except that strings are quoted.
+`Display`: strings print without quotes, whole-number floats keep `.0`, and tables print as `table: 0x…`. `Debug` is the same except that strings are quoted.
 
 ```rust
 use flextable::Value;

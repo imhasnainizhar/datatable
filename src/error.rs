@@ -17,13 +17,12 @@ pub enum Error {
         /// What was actually stored.
         found: &'static str,
     },
-    /// Two values have no defined order (Lua: "attempt to compare ...").
+    /// Two values have no defined order.
     Incomparable {
         left: &'static str,
         right: &'static str,
     },
-    /// A sequence position was outside the range the operation allows
-    /// (Lua: "position out of bounds").
+    /// A sequence position was outside the range the operation allows.
     PositionOutOfBounds {
         /// The 1-based position that was requested.
         position: i64,
