@@ -1,0 +1,12 @@
+[package]
+name = "data-table"
+version = "0.1.0"
+edition = "2021"
+description = "A Lua-inspired table: one flexible structure for arrays, dictionaries, objects, records, sets, and modules."
+license = "Apache-2.0"
+keywords = ["table", "map", "array", "data-structure"]
+categories = ["data-structures"]
+readme = "README.md"
+
+[dependencies]
+hashbrown = "0.17.1"
