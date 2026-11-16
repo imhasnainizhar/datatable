@@ -7,7 +7,7 @@ use std::cmp::Ordering;
 use std::fmt;
 use std::rc::Rc;
 
-/// A Lua-like value.
+/// A dynamic value.
 ///
 /// Every variant is cheap to clone: strings are reference-counted
 /// (`Rc<str>`) and tables are shared handles, so reading a value out of a
@@ -103,7 +103,7 @@ impl Value {
         }
     }
 
-    /// Truthiness: only `nil` and `false` are false, matching Lua.
+    /// Truthiness: only `nil` and `false` are false.
     #[inline]
     pub fn is_truthy(&self) -> bool {
         !matches!(self, Self::Nil | Self::Boolean(false))
@@ -166,7 +166,7 @@ impl Value {
         std::mem::take(self)
     }
 
-    /// Lua's `<` ordering: numbers compare with numbers (integers and floats
+    /// Ordering for numbers and strings: numbers compare with numbers (integers and floats
     /// mix exactly), strings with strings (bytewise). `None` for any other
     /// pairing, and for comparisons involving NaN.
     pub fn lua_cmp(&self, other: &Value) -> Option<Ordering> {
@@ -207,7 +207,7 @@ impl PartialEq for Value {
     }
 }
 
-/// Write a float the way Lua does: integral floats keep a `.0`.
+/// Write a float so that integral floats keep a `.0`.
 pub(crate) fn write_number(f: &mut impl fmt::Write, n: f64) -> fmt::Result {
     if n.is_nan() {
         f.write_str(if n.is_sign_negative() { "-nan" } else { "nan" })
@@ -229,7 +229,7 @@ impl fmt::Debug for Value {
     }
 }
 
-/// Lua `tostring`: strings print without quotes.
+/// Strings print without quotes; whole-number floats keep a `.0`.
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

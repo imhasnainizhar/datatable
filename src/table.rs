@@ -11,8 +11,8 @@
 //! 1. `array` is empty or its last element is non-nil.
 //! 2. `map` holds no live integer key in `1..=array.len() + 1`.
 //!
-//! Together these make `array.len()` always a valid Lua *border*
-//! (`t[n] ~= nil and t[n + 1] == nil`), so [`Table::len`] is O(1) with no
+//! Together these make `array.len()` always a valid *border*
+//! (`t[n]` is set and `t[n + 1]` is not), so [`Table::len`] is O(1) with no
 //! binary search, and appending is a plain `Vec::push`.
 
 use crate::error::{Error, Result};
@@ -29,7 +29,7 @@ use std::rc::Rc;
 
 /// Shared table handle. Cloning is a cheap reference, not a deep copy.
 ///
-/// Tables compare and hash by identity, like Lua tables.
+/// Tables compare and hash by identity.
 ///
 /// # Reentrancy
 ///
@@ -133,13 +133,13 @@ impl TableInner {
             }
             slot.store(value);
         } else {
-            // `t[#t + 1] = v`
+            // `t[len + 1] = v`
             self.array.push(value);
             self.migrate();
         }
     }
 
-    /// Deletions, and integer keys outside `1..=#t + 1`.
+    /// Deletions, and integer keys outside `1..=len + 1`.
     #[inline(never)]
     fn set_int_slow(&mut self, i: i64, value: Value) {
         let len = self.array.len() as u64;
@@ -264,8 +264,7 @@ impl Table {
         Self::default()
     }
 
-    /// Table with room for `narray` sequence slots and `nhash` map slots
-    /// (Lua's `table.create` / `lua_createtable`).
+    /// Table with room for `narray` sequence slots and `nhash` map slots.
     pub fn with_capacity(narray: usize, nhash: usize) -> Self {
         Self::from_inner(TableInner {
             array: Vec::with_capacity(narray),
@@ -316,7 +315,7 @@ impl Table {
         t
     }
 
-    /// Lua `table.pack`: a sequence of all values plus a field `n` holding
+    /// A sequence of all values plus a field `n` holding
     /// their count (so trailing nils are not lost).
     pub fn pack<I, V>(values: I) -> Self
     where
@@ -442,7 +441,7 @@ impl Table {
         self.inner.borrow().get_ref(k)?.as_bool()
     }
 
-    /// Whether `t[key] ~= nil`.
+    /// Whether `t[key]` is set (not nil).
     #[inline]
     pub fn contains_key<K: AsKey>(&self, key: K) -> bool {
         match key.key_ref() {
@@ -499,10 +498,10 @@ impl Table {
     // Size
     // ---------------------------------------------------------------------
 
-    /// Lua `#t`: a border of the sequence, in O(1).
+    /// The length of the sequence, in O(1).
     ///
     /// For a proper sequence (`1..=n` all non-nil) this is `n`. With holes it
-    /// is *a* border, as in Lua: `t[len] ~= nil` and `t[len + 1] == nil`.
+    /// is *a* border: `t[len]` is set and `t[len + 1]` is not.
     #[inline]
     pub fn len(&self) -> usize {
         self.inner.borrow().array.len()
@@ -551,10 +550,10 @@ impl Table {
     }
 
     // ---------------------------------------------------------------------
-    // Sequence operations (Lua `table` library)
+    // Sequence operations
     // ---------------------------------------------------------------------
 
-    /// Append to the sequence (`t[#t + 1] = value`). Amortized O(1).
+    /// Append to the sequence (`t[len + 1] = value`). Amortized O(1).
     /// Appending `nil` does nothing.
     #[inline]
     pub fn push(&self, value: impl Into<Value>) -> Result<()> {
@@ -577,8 +576,8 @@ impl Table {
         v
     }
 
-    /// Lua `table.insert(t, pos, value)`: insert at `pos`, shifting
-    /// `t[pos], ..., t[#t]` up by one. `pos` must be in `1..=#t + 1`.
+    /// Insert at `pos`, shifting `t[pos], ..., t[len]` up by one. `pos`
+    /// must be in `1..=len + 1`.
     pub fn insert(&self, pos: i64, value: impl Into<Value>) -> Result<()> {
         let value = value.into();
         let mut inner = self.inner.borrow_mut();
@@ -602,8 +601,8 @@ impl Table {
         Ok(())
     }
 
-    /// Lua `table.remove(t, pos)`: remove and return `t[pos]`, shifting the
-    /// elements after it down by one. `pos` must be in `1..=#t + 1` (or `0`
+    /// Remove and return `t[pos]`, shifting the
+    /// elements after it down by one. `pos` must be in `1..=len + 1` (or `0`
     /// when the sequence is empty).
     pub fn remove(&self, pos: i64) -> Result<Value> {
         let mut inner = self.inner.borrow_mut();
@@ -617,7 +616,7 @@ impl Table {
             inner.trim();
             Ok(v)
         } else if idx == len as u64 {
-            // `t[#t + 1]` is nil by definition of a border.
+            // `t[len + 1]` is nil by definition of a border.
             Ok(Value::Nil)
         } else if pos == 0 && len == 0 {
             Ok(inner.map.remove(KeyRef::Integer(0)))
@@ -626,14 +625,14 @@ impl Table {
         }
     }
 
-    /// Lua `table.concat(t, sep)`: join the whole sequence. Every element
+    /// Join the whole sequence with `sep`. Every element
     /// must be a string or a number.
     pub fn concat(&self, sep: &str) -> Result<String> {
         let inner = self.inner.borrow();
         concat_values(inner.array.iter(), inner.array.len(), sep)
     }
 
-    /// Lua `table.concat(t, sep, i, j)`: join `t[i], ..., t[j]`.
+    /// Join `t[i], ..., t[j]` with `sep`.
     pub fn concat_range(&self, sep: &str, i: i64, j: i64) -> Result<String> {
         let inner = self.inner.borrow();
         if i > j {
@@ -656,12 +655,12 @@ impl Table {
         }
     }
 
-    /// Lua `table.unpack(t)`: the sequence `t[1], ..., t[#t]` as a vector.
+    /// The sequence `t[1], ..., t[len]` as a vector.
     pub fn unpack(&self) -> Vec<Value> {
         self.inner.borrow().array.clone()
     }
 
-    /// Lua `table.unpack(t, i, j)`: `t[i], ..., t[j]`, with `nil` for
+    /// `t[i], ..., t[j]` as a vector, with `nil` for
     /// missing fields.
     pub fn unpack_range(&self, i: i64, j: i64) -> Vec<Value> {
         let inner = self.inner.borrow();
@@ -683,7 +682,7 @@ impl Table {
         }
     }
 
-    /// Lua `table.move(t, f, e, pos)`: copy `t[f..=e]` to `t[pos..]` within
+    /// Copy `t[f..=e]` to `t[pos..]` within
     /// this table. Overlapping ranges are handled correctly.
     pub fn move_within(&self, f: i64, e: i64, pos: i64) -> Result<()> {
         let Some(n) = check_move(f, e, pos, self.len())? else {
@@ -705,7 +704,7 @@ impl Table {
         Ok(())
     }
 
-    /// Lua `table.move(t, f, e, pos, dest)`: copy `t[f..=e]` into
+    /// Copy `t[f..=e]` into
     /// `dest[pos..]`.
     pub fn move_to(&self, f: i64, e: i64, pos: i64, dest: &Table) -> Result<()> {
         if self.ptr_eq(dest) {
@@ -733,7 +732,7 @@ impl Table {
         Ok(())
     }
 
-    /// Lua `table.sort(t)`: sort the sequence ascending, in place.
+    /// Sort the sequence ascending, in place.
     ///
     /// All elements must be numbers, or all strings; anything else is an
     /// [`Error::Incomparable`] and leaves the table untouched. Integers and
@@ -789,8 +788,8 @@ impl Table {
                     *slot = Value::Integer(i);
                 }
             }
-            // All floats: sort the raw `f64`s. `total_cmp` agrees with Lua's
-            // order on ordinary numbers and puts NaN last. Mixed
+            // All floats: sort the raw `f64`s. `total_cmp` agrees with the
+            // numeric order on ordinary numbers and puts NaN last. Mixed
             // integer/float sequences need the exact comparison instead.
             Kind::Num
                 if a.iter().all(
@@ -845,8 +844,7 @@ impl Table {
         inner.trim();
     }
 
-    /// Sort the sequence with a comparator (not stable, no allocation;
-    /// closest to Lua's `table.sort(t, comp)`).
+    /// Sort the sequence with a comparator (not stable, no allocation).
     ///
     /// Same restrictions as [`sort_by`](Self::sort_by).
     pub fn sort_unstable_by<F>(&self, compare: F)
@@ -877,10 +875,10 @@ impl Table {
     // Traversal
     // ---------------------------------------------------------------------
 
-    /// Lua `pairs(t)`: every field. Sequence keys come first in ascending
+    /// Every field. Sequence keys come first in ascending
     /// order, then the remaining keys in insertion order.
     ///
-    /// Holds no borrow between items. As in Lua, existing fields may be
+    /// Holds no borrow between items. Existing fields may be
     /// assigned or cleared during the traversal; if new keys are added, the
     /// traversal stays safe but may skip or repeat fields.
     #[inline]
@@ -888,7 +886,7 @@ impl Table {
         Pairs::new(self.clone())
     }
 
-    /// Lua `ipairs(t)`: `(1, t[1]), (2, t[2]), ...` up to the first `nil`.
+    /// `(1, t[1]), (2, t[2]), ...` up to the first `nil`.
     #[inline]
     pub fn ipairs(&self) -> IPairs {
         IPairs::new(self.clone())
@@ -904,7 +902,7 @@ impl Table {
         self.pairs().map(|(_, v)| v)
     }
 
-    /// Lua `next(t, key)`: the field after `key` in traversal order, or the
+    /// The field after `key` in traversal order, or the
     /// first field when `key` is `nil`. `Ok(None)` marks the end.
     ///
     /// O(1) per call. Errors with [`Error::InvalidKey`] if `key` is not a
@@ -952,7 +950,7 @@ impl Table {
         Rc::as_ptr(&self.inner).cast()
     }
 
-    /// Render the contents as a Lua-style table constructor, for debugging:
+    /// Render the contents as a table literal, for debugging:
     /// `{1, 2, name = "x", [true] = 1}`. Tables already being printed
     /// (cycles) show as `<cycle>`.
     pub fn dump(&self) -> String {
@@ -1042,7 +1040,7 @@ impl TableRef<'_> {
         &self.inner.array
     }
 
-    /// Lua `#t`.
+    /// The length of the sequence.
     #[inline]
     pub fn len(&self) -> usize {
         self.inner.array.len()
@@ -1148,7 +1146,7 @@ fn str_prefix(s: &str) -> u64 {
     u64::from_be_bytes(buf)
 }
 
-/// Total order over numeric values: Lua's order, with NaN after everything.
+/// Total order over numeric values, with NaN after everything.
 fn number_total_cmp(a: &Value, b: &Value) -> Ordering {
     a.lua_cmp(b).unwrap_or_else(|| {
         let nan = |v: &Value| matches!(v, Value::Number(n) if n.is_nan());

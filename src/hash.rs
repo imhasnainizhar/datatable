@@ -8,9 +8,9 @@
 //! Why this shape instead of a plain `HashMap<Key, Value>`:
 //!
 //! - Iteration is a linear scan over a dense vector, and a position in that
-//!   vector is a stable cursor, which is what makes Lua's `next` O(1).
+//!   vector is a stable cursor, which is what makes `next` O(1).
 //! - Removal leaves a tombstone (value = nil) instead of moving entries, so
-//!   clearing fields during a traversal is safe, exactly as in Lua.
+//!   clearing fields during a traversal is safe.
 //!   Tombstones are reclaimed only when a new key is inserted.
 //! - The index holds 4-byte slots, so probing touches very little memory, and
 //!   every entry caches its hash, so growth never re-hashes a string.
