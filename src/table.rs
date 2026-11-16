@@ -1016,11 +1016,11 @@ impl Table {
 /// to read many fields, or to read strings and nested tables.
 ///
 /// ```
-/// use datatable::{table, Value};
+/// use flextable::{table, Value};
 ///
-/// let t = table! { "name" => "datatable", "stars" => 5 };
+/// let t = table! { "name" => "flextable", "stars" => 5 };
 /// let view = t.borrow();
-/// assert_eq!(view.get("name").and_then(Value::as_str), Some("datatable"));
+/// assert_eq!(view.get("name").and_then(Value::as_str), Some("flextable"));
 /// assert_eq!(view.iter().count(), 2);
 /// ```
 pub struct TableRef<'a> {

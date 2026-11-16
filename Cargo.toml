@@ -1,5 +1,5 @@
 [package]
-name = "datatable"
+name = "flextable"
 version = "0.1.0"
 edition = "2021"
 description = "A Lua-inspired table: one flexible structure for arrays, dictionaries, objects, records, sets, and modules."
@@ -7,6 +7,10 @@ license = "Apache-2.0"
 keywords = ["table", "map", "array", "data-structure"]
 categories = ["data-structures"]
 readme = "README.md"
+repository = "https://github.com/imhasnainizhar/datatable"
+# Only the library goes to crates.io; the docs site, CI config, tests and
+# benchmarks stay in the repository.
+include = ["/src/**/*.rs", "/README.md", "/LICENSE", "/Cargo.toml"]
 
 [dependencies]
 hashbrown = "0.17.1"

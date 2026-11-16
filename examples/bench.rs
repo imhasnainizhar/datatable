@@ -8,7 +8,7 @@
 //! floor rather than a fair fight: a table stores dynamically typed values
 //! behind a shared handle.
 
-use datatable::{Table, Value};
+use flextable::{Table, Value};
 use std::collections::HashMap;
 use std::hint::black_box;
 use std::time::Instant;
