@@ -1,0 +1,181 @@
+A table's sequence is the run of integer keys starting at 1. Those keys live in a contiguous array, so reading, writing and appending cost about the same as on a `Vec`.
+
+<Callout title="Positions start at 1">
+The first element is at position 1 and the last at `len()`. `get`, `set`, `insert`, `remove`, `concat_range`, `unpack_range` and `move_within` all count from 1.
+</Callout>
+
+## Creating a sequence
+
+```rust
+use flextable::{table, Table, Value};
+
+let a = table![10, 20, 30];                       // literal
+let b = Table::from_seq(vec![10, 20, 30]);        // from any iterator of values
+let c: Table = (1..=3).map(|i| Value::from(i * 10)).collect();
+let d = Table::with_capacity(1_000, 0);           // empty, room for 1,000 items
+
+assert_eq!(a.unpack(), b.unpack());
+assert_eq!(b.unpack(), c.unpack());
+assert!(d.is_empty());
+```
+
+Values in one sequence can have different types: `table![1, "two", 3.0, true]` is fine.
+
+## Reading elements
+
+```rust
+use flextable::{table, Value};
+
+let t = table!["a", "b", "c"];
+
+assert_eq!(t.get(2), Value::from("b"));
+assert_eq!(t.get(4), Value::Nil);                       // past the end
+assert_eq!(t.unpack_range(2, 4), vec![Value::from("b"), Value::from("c"), Value::Nil]);
+
+for (i, v) in t.ipairs() {
+    println!("{i}: {v}");                               // 1: a, 2: b, 3: c
+}
+```
+
+For bulk reads, borrow the sequence as a slice. Nothing is cloned, and every slice method is available. Slice index `i` is position `i + 1`.
+
+```rust
+use flextable::table;
+
+let t = table![3, 1, 4, 1, 5];
+let total: i64 = t.with_slice(|s| s.iter().filter_map(|v| v.as_integer()).sum());
+assert_eq!(total, 14);
+assert_eq!(t.borrow().as_slice().len(), 5);
+```
+
+## Adding and removing
+
+### At the end
+
+[`push`](/api/table/#push) appends and [`pop`](/api/table/#pop) removes the last element, both amortized O(1). Setting position `len() + 1` is the same as a push.
+
+```rust
+use flextable::{Table, Value};
+
+let stack = Table::new();
+stack.push(1)?;
+stack.push(2)?;
+stack.set(3, 3)?;                      // same as push(3)
+assert_eq!(stack.len(), 3);
+
+assert_eq!(stack.pop(), Value::from(3));
+assert_eq!(stack.pop(), Value::from(2));
+assert_eq!(stack.pop(), Value::from(1));
+assert_eq!(stack.pop(), Value::Nil);   // popping an empty sequence is not an error
+```
+
+### In the middle
+
+[`insert`](/api/table/#insert) shifts later elements up and [`remove`](/api/table/#remove) shifts them down. Valid positions are `1..=len() + 1`.
+
+```rust
+use flextable::{table, Error, Value};
+
+let t = table!["a", "c"];
+t.insert(2, "b")?;                         // a, b, c
+t.insert(1, "start")?;                     // start, a, b, c
+t.insert(5, "end")?;                       // len + 1 appends
+assert_eq!(t.concat(" ")?, "start a b c end");
+
+assert_eq!(t.remove(1)?, Value::from("start"));
+assert_eq!(t.remove(5)?, Value::Nil);      // len + 1 is empty by definition
+
+assert_eq!(t.insert(0, "x"), Err(Error::PositionOutOfBounds { position: 0, len: 4 }));
+```
+
+## Joining into a string
+
+[`concat`](/api/table/#concat) joins the sequence with a separator. Every element must be a string or a number. Whole-number floats keep a `.0`.
+
+```rust
+use flextable::table;
+
+let t = table!["x", 1, 2.5, 3.0];
+assert_eq!(t.concat(", ")?, "x, 1, 2.5, 3.0");
+assert_eq!(t.concat_range("-", 2, 3)?, "1-2.5");
+
+t.push(true)?;
+assert!(t.concat("").is_err());   // booleans cannot be joined
+```
+
+## Sorting and reversing
+
+[`sort`](/api/table/#sort) orders the sequence ascending. It accepts all numbers (integers and floats can mix) or all strings; anything else returns `Error::Incomparable` and leaves the table unchanged.
+
+```rust
+use flextable::table;
+
+let n = table![3, 1.5, 2, -7];
+n.sort()?;
+assert_eq!(n.concat(" ")?, "-7 1.5 2 3");
+
+let s = table!["pear", "Apple", "fig"];
+s.sort()?;
+assert_eq!(s.concat(" ")?, "Apple fig pear");   // byte order: uppercase first
+```
+
+For any other order, pass a comparator. `sort_by` is stable; `sort_unstable_by` is usually faster and allocates nothing.
+
+```rust
+use flextable::table;
+
+let words = table!["kiwi", "fig", "banana", "date"];
+words.sort_by(|a, b| {
+    let (a, b) = (a.as_str().unwrap(), b.as_str().unwrap());
+    a.len().cmp(&b.len()).then(a.cmp(b))
+});
+assert_eq!(words.concat(" ")?, "fig date kiwi banana");
+
+words.reverse();
+assert_eq!(words.concat(" ")?, "banana kiwi date fig");
+```
+
+<Callout type="warning" title="Comparator rules">
+The comparator must not touch the table being sorted (it is borrowed, and touching it panics), and it must be a consistent total order. [`Value::lua_cmp`](/api/value/#lua_cmp) is a ready-made comparison for numbers and strings.
+</Callout>
+
+## Moving ranges
+
+[`move_within(f, e, pos)`](/api/table/#move_within) copies positions `f..=e` to start at `pos`; overlaps are handled. [`move_to`](/api/table/#move_to) copies into another table. The source is not cleared.
+
+```rust
+use flextable::table;
+
+let t = table![1, 2, 3, 4, 5];
+t.move_within(1, 3, 3)?;                 // overlapping copy to the right
+assert_eq!(t.concat(",")?, "1,2,1,2,3");
+
+let src = table!["a", "b", "c"];
+let dst = table!["x"];
+src.move_to(1, 3, 2, &dst)?;             // append src after "x"
+assert_eq!(dst.concat(",")?, "x,a,b,c");
+```
+
+## Packing values with their count
+
+A sequence cannot end in nil, so trailing nils would be lost. [`Table::pack`](/api/table/#pack) records the original count in field `"n"`:
+
+```rust
+use flextable::{Table, Value};
+
+let args = Table::pack([Value::from(1), Value::Nil, Value::from(3), Value::Nil]);
+assert_eq!(args.get_integer("n"), Some(4));
+assert_eq!(args.len(), 3);
+```
+
+## Summary
+
+| Task | Method | Cost |
+| --- | --- | --- |
+| Read or overwrite an element | `get(i)`, `set(i, v)` | O(1) |
+| Length | `len()` | O(1) |
+| Append, remove last | `push`, `pop` | amortized O(1) |
+| Insert or remove in the middle | `insert`, `remove` | O(n) shifted |
+| Join | `concat`, `concat_range` | O(n) |
+| Sort | `sort`, `sort_by`, `sort_unstable_by` | O(n log n) |
+| Copy a range | `move_within`, `move_to` | O(k) copied |

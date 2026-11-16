@@ -1,0 +1,46 @@
+## Syntax
+
+```rust-sig
+table![]                              // empty table
+table![v1, v2, ...]                   // sequence
+table! { k1 => v1, k2 => v2, ... }    // key/value pairs
+```
+
+Trailing commas are allowed. Brackets and braces are interchangeable, as with any macro; the forms are told apart by the `=>`.
+
+## Sequence form
+
+Each value goes through `Value::from`, so values of different types can be mixed. Equivalent to [`Table::from_seq`](/api/table/#from_seq).
+
+```rust
+use flextable::{table, Value};
+
+let t = table![1, "two", 3.0, true];
+assert_eq!(t.len(), 4);
+assert_eq!(t.get(2), Value::from("two"));
+```
+
+## Key/value form
+
+Each pair becomes a `set(key, value)` call. Keys are anything that implements [`AsKey`](/api/key/#askey); values anything that implements `Into<Value>`. Tables nest naturally.
+
+```rust
+use flextable::table;
+
+let server = table! {
+    "host" => "localhost",
+    "port" => 8080,
+    "tags" => table!["web", "internal"],
+    1 => "first",
+};
+assert_eq!(server.len(), 1);
+assert_eq!(server.field_count(), 4);
+```
+
+<Callout type="warning" title="Panics">
+The key/value form panics if a key is nil or NaN, because a literal is expected to be valid. When keys come from data, build the table with `set` and handle the `Result`.
+</Callout>
+
+## Empty form
+
+`table![]` is the same as `Table::new()`.

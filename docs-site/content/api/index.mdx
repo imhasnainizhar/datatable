@@ -1,0 +1,43 @@
+Everything below is re-exported from the crate root, so `use flextable::{Table, Value};` is all most code needs.
+
+## Types
+
+| Item | Kind | Description |
+| --- | --- | --- |
+| [`Table`](/api/table/) | struct | The table: a shared handle to an array part and a hash part. |
+| [`TableRef`](/api/table-ref/) | struct | A read-only borrowed view of a table, from `Table::borrow`. |
+| [`Value`](/api/value/) | enum | A dynamic value: nil, boolean, integer, float, string or table. |
+| [`Key`](/api/key/#key) | enum | An owned, always-valid key. |
+| [`KeyRef`](/api/key/#keyref) | enum | A borrowed key used for lookups. |
+| [`Error`](/api/error/) | enum | Why a table operation failed. |
+| [`Result`](/api/error/#result) | type alias | `std::result::Result<T, Error>`. |
+
+## Traits
+
+| Item | Description |
+| --- | --- |
+| [`AsKey`](/api/key/#askey) | Anything usable as a key: integers, floats, booleans, strings, tables, `Value`, `Key`. |
+
+## Iterators
+
+| Item | Returned by | Yields |
+| --- | --- | --- |
+| [`Pairs`](/api/table-ref/#pairs) | `Table::pairs` | `(Key, Value)` |
+| [`IPairs`](/api/table-ref/#ipairs) | `Table::ipairs` | `(i64, Value)` |
+| [`Iter`](/api/table-ref/#iter-borrowing) | `TableRef::iter` | `(KeyRef<'a>, &'a Value)` |
+
+## Macros
+
+| Item | Description |
+| --- | --- |
+| [`table!`](/api/table-macro/) | Build a table from a list of values or `key => value` pairs. |
+
+## Modules
+
+The items are also reachable through their modules: `flextable::table`, `flextable::value`, `flextable::key`, `flextable::iter` and `flextable::error`. The crate root is the recommended path.
+
+## Conventions on these pages
+
+- Signatures are shown as declared. `K: AsKey` means any key type; `V: Into<Value>` (or `impl Into<Value>`) means any value type.
+- **Complexity** badges give the cost in terms of `n`, the number of elements involved.
+- Methods that take `&self` and change the table do so through interior mutability; see [Core Concepts](/getting-started/core-concepts/#borrowing-rules).

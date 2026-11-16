@@ -1,0 +1,162 @@
+```rust-sig
+pub enum Value {
+    Nil,
+    Boolean(bool),
+    Integer(i64),
+    Number(f64),
+    String(Rc<str>),
+    Table(Table),
+}
+```
+
+A dynamic value. `Default` is `Nil`. Every variant clones in O(1).
+
+**Implements:** `Clone`, `Default`, `Debug`, `Display`, `PartialEq`, `AsKey`.
+
+## Conversions
+
+`From` is implemented for everything a table method accepts as a value:
+
+| From | Becomes |
+| --- | --- |
+| `()` | `Nil` |
+| `Option<T>` where `T: Into<Value>` | `Nil` for `None`, otherwise the converted value |
+| `bool` | `Boolean` |
+| `i8`, `i16`, `i32`, `i64`, `u8`, `u16`, `u32` | `Integer` |
+| `isize`, `usize`, `u64` | `Integer` if it fits in `i64`, otherwise `Number` |
+| `f32`, `f64` | `Number` |
+| `&str`, `String`, `&String`, `Rc<str>`, `char` | `String` |
+| `Table`, `&Table` | `Table` (a handle, not a copy) |
+| `Vec<T>` where `T: Into<Value>` | `Table`, a new sequence |
+| `Key` | the matching variant |
+| `&Value` | a clone |
+
+## Inspecting
+
+### `is_nil`
+
+```rust-sig
+pub fn is_nil(&self) -> bool
+```
+
+### `is_truthy`
+
+```rust-sig
+pub fn is_truthy(&self) -> bool
+```
+
+Lua truthiness: only `Nil` and `Boolean(false)` are false. `0` and `""` are truthy.
+
+### `is_number`
+
+```rust-sig
+pub fn is_number(&self) -> bool
+```
+
+`true` for `Integer` and `Number`.
+
+### `type_name`
+
+```rust-sig
+pub fn type_name(&self) -> &'static str
+```
+
+One of `"nil"`, `"boolean"`, `"integer"`, `"number"`, `"string"`, `"table"`. Used in error messages.
+
+## Extracting
+
+### `as_bool`
+
+```rust-sig
+pub fn as_bool(&self) -> Option<bool>
+```
+
+### `as_integer`
+
+```rust-sig
+pub fn as_integer(&self) -> Option<i64>
+```
+
+Integers as-is, and floats only when they hold an exact integer (`3.0` yes, `3.5` no). Strings are never parsed.
+
+### `as_number`
+
+```rust-sig
+pub fn as_number(&self) -> Option<f64>
+```
+
+Floats as-is; integers convert.
+
+### `as_str`
+
+```rust-sig
+pub fn as_str(&self) -> Option<&str>
+```
+
+### `as_table`
+
+```rust-sig
+pub fn as_table(&self) -> Option<&Table>
+```
+
+### `take`
+
+```rust-sig
+pub fn take(&mut self) -> Value
+```
+
+Moves the value out, leaving `Nil`.
+
+```rust
+use flextable::Value;
+
+assert_eq!(Value::from(3.0).as_integer(), Some(3));
+assert_eq!(Value::from(3.5).as_integer(), None);
+assert_eq!(Value::from(2).as_number(), Some(2.0));
+assert_eq!(Value::from("10").as_integer(), None);   // no string coercion
+```
+
+## Comparing
+
+### Equality
+
+`==` follows Lua: integers and floats are equal when they represent the same number exactly (`1 == 1.0`, but `2^53 + 1` is not equal to the float `2^53`), strings compare by content, tables by identity. NaN is not equal to itself.
+
+### `lua_cmp`
+
+```rust-sig
+pub fn lua_cmp(&self, other: &Value) -> Option<Ordering>
+```
+
+Ordering for numbers (integers and floats mix exactly) and strings (byte order). `None` for any other pairing, or when NaN is involved. Handy in `sort_by` comparators.
+
+### `try_cmp`
+
+```rust-sig
+pub fn try_cmp(&self, other: &Value) -> Result<Ordering>
+```
+
+`lua_cmp` as a `Result`, failing with `Incomparable`, for use with `?`.
+
+```rust
+use std::cmp::Ordering;
+use flextable::Value;
+
+assert_eq!(Value::from(1).lua_cmp(&Value::from(1.5)), Some(Ordering::Less));
+assert_eq!(Value::from("b").lua_cmp(&Value::from("a")), Some(Ordering::Greater));
+assert_eq!(Value::from(1).lua_cmp(&Value::from("1")), None);
+assert!(Value::from(true).try_cmp(&Value::from(false)).is_err());
+```
+
+## Formatting
+
+`Display` is Lua's `tostring`: strings print without quotes, whole-number floats keep `.0`, and tables print as `table: 0x…`. `Debug` is the same except that strings are quoted.
+
+```rust
+use flextable::Value;
+
+assert_eq!(Value::from(2.0).to_string(), "2.0");
+assert_eq!(Value::from("hi").to_string(), "hi");
+assert_eq!(format!("{:?}", Value::from("hi")), "\"hi\"");
+assert_eq!(Value::Nil.to_string(), "nil");
+```

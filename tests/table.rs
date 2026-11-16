@@ -2,7 +2,7 @@
 // map key.
 #![allow(clippy::mutable_key_type)]
 
-use datatable::{table, Error, Key, Table, Value};
+use flextable::{table, Error, Key, Table, Value};
 use std::cmp::Ordering;
 use std::collections::HashMap;
 

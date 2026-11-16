@@ -1,0 +1,105 @@
+## Choosing an iterator
+
+| Method | Yields | Clones | Table may change during the loop |
+| --- | --- | --- | --- |
+| [`pairs()`](/api/table/#pairs) | `(Key, Value)` | yes | yes |
+| [`ipairs()`](/api/table/#ipairs) | `(i64, Value)`, sequence only | yes | yes |
+| [`borrow().iter()`](/api/table-ref/#iter) | `(KeyRef, &Value)` | no | no (panics) |
+| [`for_each(f)`](/api/table/#for_each) | `(&Key, &Value)` to a closure | no | no (panics) |
+
+Use `pairs`/`ipairs` by default. Switch to `borrow().iter()` or `for_each` in hot loops that only read.
+
+## Order
+
+All full traversals use the same order: sequence keys first, ascending, then the other keys in the order they were first inserted. The order is deterministic, unlike Lua's.
+
+```rust
+use flextable::table;
+
+let t = table![10, 20];
+t.set("b", 1)?;
+t.set("a", 2)?;
+t.set(true, 3)?;
+
+let keys: Vec<String> = t.keys().map(|k| k.to_string()).collect();
+assert_eq!(keys, ["1", "2", "b", "a", "true"]);
+```
+
+## pairs
+
+`pairs` visits every field. It keeps a cursor rather than a borrow, so you may assign to or clear fields while looping, including the one you are on.
+
+```rust
+use flextable::{Table, Value};
+
+let t = Table::new();
+for i in 1..=5 {
+    t.set(format!("k{i}"), i)?;
+}
+// Remove the odd ones while iterating.
+for (k, v) in t.pairs() {
+    if v.as_integer().unwrap() % 2 == 1 {
+        t.set(k, Value::Nil)?;
+    }
+}
+assert_eq!(t.field_count(), 2);
+```
+
+<Callout type="warning" title="Adding keys mid-loop">
+Assigning to existing fields and clearing fields is always safe. Adding *new* keys during a traversal is also memory-safe, but the loop may then skip or repeat fields.
+</Callout>
+
+`keys()` and `values()` are shorthands built on `pairs`, and `&Table` implements `IntoIterator`, so `for (k, v) in &t` works too.
+
+## ipairs
+
+`ipairs` walks positions 1, 2, 3, … and stops at the first nil. With holes, it can stop before `len()`.
+
+```rust
+use flextable::{table, Value};
+
+let t = table!["a", "b", "c"];
+let items: Vec<(i64, Value)> = t.ipairs().collect();
+assert_eq!(items[2], (3, Value::from("c")));
+
+t.set(2, Value::Nil)?;
+assert_eq!(t.ipairs().count(), 1);
+```
+
+## Reading without cloning
+
+`pairs` returns owned keys and values, which means a reference-count update for every string and table. When you only read, borrow instead:
+
+```rust
+use flextable::table;
+
+let t = table! { "a" => 1, "b" => 2, "c" => 3 };
+
+let view = t.borrow();
+let sum: i64 = view.iter().filter_map(|(_, v)| v.as_integer()).sum();
+assert_eq!(sum, 6);
+drop(view);              // release the borrow before writing again
+
+let mut longest = 0;
+t.for_each(|k, _| longest = longest.max(k.to_string().len()));
+assert_eq!(longest, 1);
+```
+
+## next
+
+[`next`](/api/table/#next) is the stateless form: pass the previous key (or nil to start) and get the following field. Each call is O(1), and it survives clearing the field it was given.
+
+```rust
+use flextable::{table, Value};
+
+let t = table! { "x" => 1, "y" => 2 };
+let mut key = Value::Nil;
+let mut seen = 0;
+while let Some((k, _v)) = t.next(&key)? {
+    seen += 1;
+    key = k.into();
+}
+assert_eq!(seen, 2);
+```
+
+`next` returns `Error::InvalidKey` if the key you pass was never in the table.

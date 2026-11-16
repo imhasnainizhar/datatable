@@ -1,0 +1,112 @@
+Any key that is not part of the sequence lives in the table's hash part. That is how a table acts as a record (named fields), a dictionary (arbitrary keys) or a set (keys with a true value).
+
+## Records
+
+String keys work like struct fields. [`get_field`](/api/table/#get_field) and [`set_field`](/api/table/#set_field) are spelled-out aliases for `get` and `set` with a `&str`.
+
+```rust
+use flextable::{table, Value};
+
+let user = table! { "name" => "Ada", "age" => 36, "admin" => true };
+user.set_field("email", "ada@example.com")?;
+
+assert_eq!(user.get_field("name"), Value::from("Ada"));
+assert_eq!(user.get_bool("admin"), Some(true));
+assert_eq!(user.field_count(), 4);
+assert_eq!(user.len(), 0);        // no sequence part
+```
+
+### Typed reads
+
+`get` returns a [`Value`](/api/value/). When you know the type, the typed getters return an `Option` and skip the clone:
+
+| Method | Returns `Some` when the field is |
+| --- | --- |
+| `get_integer(k)` | an integer, or a float with an exact integer value |
+| `get_number(k)` | an integer or a float (integers convert) |
+| `get_bool(k)` | a boolean |
+
+For strings and nested tables, use `get(k).as_str()` / `as_table()`, or borrow without cloning through [`borrow()`](/api/table-ref/).
+
+## Dictionaries
+
+Keys are not limited to strings. Integers outside the sequence, floats, booleans and tables all work. Fields keep their insertion order when you iterate.
+
+```rust
+use flextable::{Table, Value};
+
+let codes = Table::new();
+codes.set(404, "Not Found")?;          // sparse integers stay in the hash part
+codes.set(200, "OK")?;
+codes.set(0.5, "half")?;
+codes.set(false, "no")?;
+
+assert_eq!(codes.len(), 0);
+assert_eq!(codes.get(404), Value::from("Not Found"));
+
+let keys: Vec<String> = codes.keys().map(|k| k.to_string()).collect();
+assert_eq!(keys, ["404", "200", "0.5", "false"]);   // insertion order
+```
+
+### Counting with a dictionary
+
+```rust
+use flextable::Table;
+
+let counts = Table::new();
+for word in "the cat and the hat and the bat".split(' ') {
+    let n = counts.get_integer(word).unwrap_or(0);
+    counts.set(word, n + 1)?;
+}
+assert_eq!(counts.get_integer("the"), Some(3));
+assert_eq!(counts.get_integer("and"), Some(2));
+```
+
+## Sets
+
+A set is a table whose keys map to `true`. [`set_add`](/api/table/#set_add), [`set_contains`](/api/table/#set_contains) and [`set_remove`](/api/table/#set_remove) say what you mean:
+
+```rust
+use flextable::Table;
+
+let seen = Table::new();
+seen.set_add("alice")?;
+seen.set_add("bob")?;
+seen.set_add("alice")?;              // no effect: already a member
+
+assert!(seen.set_contains("alice"));
+assert_eq!(seen.field_count(), 2);
+assert!(seen.set_remove("bob"));     // true: it was there
+assert!(!seen.set_remove("bob"));    // false: already gone
+```
+
+`set_contains` checks that the value is *truthy* (anything but nil and `false`), so a field set to `false` is not a member.
+
+## Mixing shapes
+
+Nothing stops one table from being all of these at once, which is often the point:
+
+```rust
+use flextable::table;
+
+let module = table!["first", "second"];        // a sequence...
+module.set("name", "demo")?;                   // ...with named fields
+module.set_add("flag")?;                       // ...and a membership flag
+
+assert_eq!(module.len(), 2);
+assert_eq!(module.field_count(), 4);
+```
+
+## Removing fields
+
+Set a field to nil (`Value::Nil` or `()`) to delete it, or clear everything with [`clear`](/api/table/#clear), which keeps the allocated capacity for reuse.
+
+```rust
+use flextable::table;
+
+let t = table! { "a" => 1, "b" => 2 };
+t.set("a", ())?;
+assert!(!t.contains_key("a"));
+t.clear();
+assert!(t.is_empty());
+```

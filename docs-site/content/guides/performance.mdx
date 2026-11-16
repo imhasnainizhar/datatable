@@ -1,0 +1,97 @@
+## How the table is built
+
+A table has two parts, chosen so the common operations do almost no work:
+
+- **An array part** for keys `1..=n`. Integer reads and writes are a bounds check and a load, as on a `Vec`. Two invariants are kept on every write (the last slot is never nil, and the hash part never holds key `n + 1`), so `len()` is a field read with no search.
+- **A hash part** for every other key: a dense vector of entries in insertion order, indexed by a SwissTable of 4-byte positions. Iteration is a linear scan, each entry caches its hash so growth never re-hashes a string, and removal leaves a tombstone so traversals stay valid.
+
+Lookups borrow the key (`t.get("name")` hashes the `&str` directly) and allocate only when a brand-new field is inserted. Values clone in O(1): strings are `Rc<str>` and tables are handles.
+
+## Benchmarks
+
+Measured with `cargo run --release --example bench` on a 12th Gen Intel Core i5-1240P, Windows 11, Rust 1.99.1, best of 5 runs. Numbers are nanoseconds per operation and will differ on your machine; compare them relative to each other.
+
+### Small tables, in cache
+
+1,024-element sequences and a 9-field record.
+
+| Operation | ns/op |
+| --- | ---: |
+| `push` (preallocated) | 1.7 |
+| `get(i)` | 1.5 |
+| `set(i)` overwrite | 1.1 |
+| push all, then pop all | 1.4 |
+| record `get` by string key | 7.4 |
+| record `set` by string key | 7.8 |
+| `borrow().iter()`, per field | 0.5 |
+| `pairs()`, per field | 4.7 |
+| sort floats, per element | 12.1 |
+| sort strings, per element | 37.0 |
+
+### Large tables
+
+One million elements, visited in scattered order, next to the standard collections.
+
+| Operation | Table | std |
+| --- | ---: | ---: |
+| append | 12.7 | 3.9 (`Vec<i64>`) |
+| sort shuffled integers | 25.8 | 16.6 (`Vec<i64>`) |
+| string-key insert | 174 | 269 (`HashMap<String, i64>`) |
+| string-key lookup | 203 | 243 (`HashMap<String, i64>`) |
+| full traversal | 3.1 | 4.0 (`HashMap` iter) |
+
+A `Vec<i64>` stores 8 bytes per element against 24 for a dynamic value, so it wins on plain integers. Against `HashMap<String, _>` the table is ahead, mostly because lookups don't allocate and the hasher is faster than SipHash.
+
+## Habits that keep code fast
+
+### Preallocate when you know the size
+
+```rust
+use flextable::Table;
+
+let t = Table::with_capacity(10_000, 16);   // 10,000 sequence slots, 16 named fields
+for i in 0..10_000 {
+    t.push(i)?;
+}
+assert_eq!(t.len(), 10_000);
+```
+
+### Build sequences front to back
+
+Appending is O(1). Filling `t[n]` down to `t[1]` puts every key in the hash part first and migrates them when `t[1]` arrives: still linear, but about ten times slower per element.
+
+### Read without cloning in hot loops
+
+`get` and `pairs` return owned values, which costs a reference-count update for strings and tables. In loops that only read, use the typed getters or a borrowed view:
+
+```rust
+use flextable::{table, Value};
+
+let t = table! { "hp" => 90, "name" => "Ada" };
+let hp = t.get_integer("hp").unwrap();          // no clone
+let view = t.borrow();
+let name = view.get("name").and_then(Value::as_str).unwrap(); // a &str into the table
+assert_eq!((hp, name), (90, "Ada"));
+```
+
+Traversing a record through `borrow().iter()` measured about 9x faster per field than `pairs()`.
+
+### Use slices for bulk sequence work
+
+`with_slice` and `borrow().as_slice()` hand you `&[Value]`, so ordinary slice code (and its optimizations) applies.
+
+### Let `sort` pick the strategy
+
+`sort()` checks the element types once, then sorts all-integer sequences as raw `i64`s, all-float sequences as raw `f64`s, and strings by an 8-byte prefix before comparing whole strings. It is faster than an equivalent `sort_by` comparator, so prefer it when the default order is what you want.
+
+### Reuse key strings
+
+Passing a `Value::String` or `Rc<str>` you already hold as a key moves the existing allocation into the table instead of copying the bytes.
+
+## Running the benchmark
+
+```bash
+cargo run --release --example bench
+```
+
+The example lives in `examples/bench.rs` in the repository.

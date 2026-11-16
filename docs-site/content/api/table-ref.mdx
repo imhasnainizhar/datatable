@@ -1,0 +1,109 @@
+## `TableRef`
+
+```rust-sig
+pub struct TableRef<'a> { /* private */ }
+```
+
+A read-only view of a table, returned by [`Table::borrow`](/api/table/#borrow). Everything it hands out is a plain reference into the table, so reads cost no reference-count updates and no copies. While a `TableRef` is alive, any attempt to modify the table panics; drop it (or let it go out of scope) before writing.
+
+```rust
+use flextable::{table, Value};
+
+let t = table! { "name" => "flextable", "stars" => 5 };
+{
+    let view = t.borrow();
+    assert_eq!(view.get("name").and_then(Value::as_str), Some("flextable"));
+    assert_eq!(view.iter().count(), 2);
+}
+t.set("stars", 6)?;   // fine: the view is gone
+```
+
+### `get`
+
+```rust-sig
+pub fn get<K: AsKey>(&self, key: K) -> Option<&Value>
+```
+
+A reference to `t[key]`, or `None` when the field is missing or the key is invalid.
+
+### `as_slice`
+
+```rust-sig
+pub fn as_slice(&self) -> &[Value]
+```
+
+The sequence part. Element `i` is `t[i + 1]`. May contain nil holes, but never ends in one.
+
+### `len`
+
+```rust-sig
+pub fn len(&self) -> usize
+```
+
+Same as [`Table::len`](/api/table/#len).
+
+### `is_empty`
+
+```rust-sig
+pub fn is_empty(&self) -> bool
+```
+
+Whether the table has no fields at all.
+
+### `field_count`
+
+```rust-sig
+pub fn field_count(&self) -> usize
+```
+
+The number of non-nil fields.
+
+### `iter`
+
+```rust-sig
+pub fn iter(&self) -> Iter<'_>
+```
+
+Every field by reference, in [`pairs`](/api/table/#pairs) order. `&TableRef` also implements `IntoIterator`, so `for (k, v) in &view` works.
+
+## Iterator types
+
+All three implement `Iterator` and `FusedIterator`.
+
+### `Pairs`
+
+```rust-sig
+pub struct Pairs  // Iterator<Item = (Key, Value)>, Clone
+```
+
+Returned by [`Table::pairs`](/api/table/#pairs) and by `(&table).into_iter()`. Owns a handle to the table and keeps a cursor, re-borrowing the table only for each step. The table can therefore be read and modified between items. If new keys are added during the traversal, it stays safe but may skip or repeat fields.
+
+### `IPairs`
+
+```rust-sig
+pub struct IPairs  // Iterator<Item = (i64, Value)>, Clone
+```
+
+Returned by [`Table::ipairs`](/api/table/#ipairs). Yields `(1, t[1]), (2, t[2]), …` and stops at the first nil. Like `Pairs`, it holds no borrow between items.
+
+### `Iter` (borrowing)
+
+```rust-sig
+pub struct Iter<'a>  // Iterator<Item = (KeyRef<'a>, &'a Value)>, Clone
+```
+
+Returned by [`TableRef::iter`](#iter). Borrows the table for `'a` and yields references, so it never clones. Its `size_hint` gives an upper bound only.
+
+```rust
+use flextable::{table, KeyRef};
+
+let t = table![10, 20];
+t.set("x", 30)?;
+let view = t.borrow();
+let keys: Vec<String> = view.iter().map(|(k, _)| match k {
+    KeyRef::Integer(i) => i.to_string(),
+    KeyRef::String(s) => s.to_string(),
+    _ => String::from("?"),
+}).collect();
+assert_eq!(keys, ["1", "2", "x"]);
+```

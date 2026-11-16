@@ -1,0 +1,142 @@
+This walkthrough builds a tiny game inventory, touching each part of a table along the way: named fields, the sequence, nesting, iteration and errors.
+
+## 1. Create a table and set fields
+
+[`Table::new`](/api/table/#new) creates an empty table. [`set`](/api/table/#set) stores a value under a key, and [`get`](/api/table/#get) reads it back as a [`Value`](/api/value/).
+
+```rust
+// file: src/main.rs
+use flextable::{Table, Value};
+
+fn main() -> flextable::Result<()> {
+    let hero = Table::new();
+    hero.set("name", "Ada")?;
+    hero.set("gold", 120)?;
+    hero.set("alive", true)?;
+
+    assert_eq!(hero.get("name"), Value::from("Ada"));
+    assert_eq!(hero.get_integer("gold"), Some(120));
+    assert_eq!(hero.get("missing"), Value::Nil);
+    Ok(())
+}
+```
+
+The table is not declared `mut`. Tables use interior mutability, so every method takes `&self`; [Core Concepts](/getting-started/core-concepts/#tables-are-references) explains why. Reading a key that was never set returns `Value::Nil` rather than an error.
+
+## 2. Use the sequence
+
+Every table also has a numbered sequence, starting at position 1. [`push`](/api/table/#push) appends, [`len`](/api/table/#len) returns its length, and [`pop`](/api/table/#pop) removes the last item.
+
+```rust
+use flextable::{Table, Value};
+
+let bag = Table::new();
+bag.push("potion")?;
+bag.push("rope")?;
+bag.push("lantern")?;
+
+assert_eq!(bag.len(), 3);
+assert_eq!(bag.get(1), Value::from("potion"));
+assert_eq!(bag.pop(), Value::from("lantern"));
+
+bag.insert(1, "map")?;                 // shift everything up
+assert_eq!(bag.concat(", ")?, "map, potion, rope");
+```
+
+## 3. Nest tables
+
+A table stored inside another table is a handle, so changes made through either one are visible through both.
+
+```rust
+use flextable::{Table, Value};
+
+let hero = Table::new();
+let bag = Table::new();
+hero.set("bag", &bag)?;
+
+bag.push("compass")?;                   // change the original...
+
+let inside = hero.get("bag");
+let inside = inside.as_table().unwrap();
+assert_eq!(inside.get(1), Value::from("compass")); // ...and the nested one sees it
+```
+
+## 4. Build tables with the macro
+
+The [`table!`](/api/table-macro/) macro takes a list for a sequence, or `key => value` pairs for named fields.
+
+```rust
+use flextable::table;
+
+let prices = table! { "potion" => 25, "rope" => 8, "lantern" => 40 };
+let order = table!["rope", "potion", "potion"];
+
+let mut total = 0;
+for (_, item) in order.ipairs() {
+    total += prices.get_integer(&item).unwrap();
+}
+assert_eq!(total, 58);
+```
+
+[`ipairs`](/api/table/#ipairs) walks the sequence in order. To visit every field, use [`pairs`](/api/table/#pairs).
+
+## 5. Handle errors
+
+Writes return a [`Result`](/api/error/). Errors are rare and specific: nil or NaN keys, positions outside the sequence, or sorting values that cannot be compared.
+
+```rust
+use flextable::{table, Error, Value};
+
+let t = table![1, 2, 3];
+assert_eq!(t.set(Value::Nil, "x"), Err(Error::NilKey));
+assert_eq!(t.insert(9, "x"), Err(Error::PositionOutOfBounds { position: 9, len: 3 }));
+
+t.push("four")?;
+assert!(t.sort().is_err());   // numbers and strings cannot be compared
+```
+
+## The whole program
+
+```rust
+// file: src/main.rs
+use flextable::{table, Table};
+
+fn main() -> flextable::Result<()> {
+    let prices = table! { "potion" => 25, "rope" => 8, "lantern" => 40 };
+
+    let hero = Table::new();
+    hero.set("name", "Ada")?;
+    hero.set("gold", 120)?;
+
+    let bag = Table::new();
+    hero.set("bag", &bag)?;
+
+    for item in ["rope", "potion", "lantern"] {
+        let price = prices.get_integer(item).unwrap();
+        let gold = hero.get_integer("gold").unwrap();
+        if price <= gold {
+            hero.set("gold", gold - price)?;
+            bag.push(item)?;
+        }
+    }
+
+    bag.sort()?;
+    println!("{} carries: {}", hero.get("name"), bag.concat(", ")?);
+    println!("gold left: {}", hero.get("gold"));
+#   assert_eq!(bag.concat(", ")?, "lantern, potion, rope");
+#   assert_eq!(hero.get_integer("gold"), Some(47));
+    Ok(())
+}
+```
+
+```text
+Ada carries: lantern, potion, rope
+gold left: 47
+```
+
+## Next steps
+
+<Cards>
+  <Card href="/getting-started/core-concepts/" title="Core Concepts">The few rules behind every method: keys, nil, the sequence and shared handles.</Card>
+  <Card href="/api/table/" title="Table API">Every method, grouped by what it does.</Card>
+</Cards>

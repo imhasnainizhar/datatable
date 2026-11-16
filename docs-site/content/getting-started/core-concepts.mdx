@@ -1,0 +1,135 @@
+## Values
+
+Everything stored in a table is a [`Value`](/api/value/), an enum with six variants:
+
+| Variant | Holds | Created from |
+| --- | --- | --- |
+| `Value::Nil` | nothing; marks an absent field | `()`, `None` |
+| `Value::Boolean` | `bool` | `true`, `false` |
+| `Value::Integer` | `i64` | any integer type that fits |
+| `Value::Number` | `f64` | `f32`, `f64`, and `u64`/`usize` values too large for `i64` |
+| `Value::String` | `Rc<str>` | `&str`, `String`, `char` |
+| `Value::Table` | a `Table` handle | `Table`, `&Table`, `Vec<T>` |
+
+You rarely build a `Value` by hand. Methods that store values accept anything that implements `Into<Value>`, so `t.set("x", 5)` and `t.set("x", Value::Integer(5))` are the same call.
+
+Every value is cheap to clone. Strings are reference counted and tables are handles, so `get` never copies string bytes or table contents.
+
+## Keys
+
+Any value can be a key except two:
+
+- **nil**, because nil means "no field";
+- **NaN**, because NaN is not equal to itself, so a field stored under it could never be found again.
+
+Numeric keys are normalized: a float holding a whole number is the same key as the integer. Strings compare by content, and tables by identity.
+
+```rust
+use flextable::{Table, Value};
+
+let t = Table::new();
+t.set(1.0, "one")?;
+assert_eq!(t.get(1), Value::from("one"));     // 1.0 and 1 are one key
+
+t.set(true, "yes")?;                          // booleans work
+let k = Table::new();
+t.set(&k, "by identity")?;                    // so do tables
+assert_eq!(t.get(&k), Value::from("by identity"));
+assert_eq!(t.get(Table::new()), Value::Nil);  // a different table is a different key
+```
+
+## Nil means absent
+
+There is no separate "remove field" method. Setting a field to nil deletes it, and reading a missing field returns nil.
+
+```rust
+use flextable::{Table, Value};
+
+let t = Table::new();
+t.set("x", 10)?;
+t.set("x", Value::Nil)?;     // or: t.set("x", ())?
+assert!(!t.contains_key("x"));
+assert_eq!(t.field_count(), 0);
+```
+
+So a table never contains a nil value, and `pairs` only ever yields fields that exist.
+
+## The sequence
+
+Integer keys from 1 upward form the table's *sequence*. Positions are 1-based: the first element is `t.get(1)`. Key 0 and negative keys are ordinary keys outside the sequence.
+
+[`len`](/api/table/#len) returns the length of the sequence and [`field_count`](/api/table/#field_count) counts every field. Both are constant time.
+
+```rust
+use flextable::table;
+
+let t = table!["a", "b", "c"];
+t.set("label", "letters")?;
+t.set(0, "zero")?;
+
+assert_eq!(t.len(), 3);          // 1, 2, 3
+assert_eq!(t.field_count(), 5);  // plus "label" and 0
+```
+
+### Holes and the border
+
+Setting a middle element to nil creates a hole. `len` then returns a *border*: a position `n` where `t[n]` is set and `t[n + 1]` is not. With holes, several borders can exist, and which one you get depends on how the table was built. Code that needs an exact count should avoid holes or use `field_count`.
+
+```rust
+use flextable::{table, Value};
+
+let t = table![1, 2, 3, 4];
+t.set(2, Value::Nil)?;             // a hole in the middle
+assert_eq!(t.len(), 4);            // 4 is still a border
+assert_eq!(t.ipairs().count(), 1); // ipairs stops at the first nil
+
+t.set(4, Value::Nil)?;             // clearing the end shrinks the sequence
+assert_eq!(t.len(), 3);
+```
+
+## Tables are references
+
+A `Table` is a handle to shared storage, like an `Rc`. Cloning it, storing it in another table, or passing it to a function all share the same contents. Two handles are equal only if they point to the same table.
+
+```rust
+use flextable::table;
+
+let a = table![1, 2];
+let b = a.clone();         // same table
+b.push(3)?;
+assert_eq!(a.len(), 3);
+assert_eq!(a, b);
+
+let c = a.copy();          // a new table with the same contents
+c.push(4)?;
+assert_eq!(a.len(), 3);
+assert_ne!(a, c);          // equal contents, different tables
+```
+
+Because the storage is shared, methods take `&self` and mutate through interior mutability. You never need `let mut` to change a table. For independent copies see [Nesting and Copying](/guides/nesting-and-copying/).
+
+## Borrowing rules
+
+Interior mutability has one runtime rule: you cannot modify a table while it is borrowed for reading. These hold a borrow while your code runs:
+
+- closures passed to `for_each`, `with_slice`, `sort_by` and `sort_unstable_by`;
+- the [`TableRef`](/api/table-ref/) returned by `borrow()`, for as long as it lives.
+
+Modifying the same table inside one of those panics. The `pairs` and `ipairs` iterators hold no borrow between items, so changing the table during those loops is allowed.
+
+```rust-panic
+use flextable::table;
+
+let t = table![1, 2, 3];
+t.for_each(|_, _| {
+    t.push(4).unwrap();   // panics: t is borrowed by for_each
+});
+```
+
+## Errors are values
+
+Operations that can fail return [`flextable::Result`](/api/error/) instead of panicking. Reads never fail: an invalid key simply finds nothing. The full list is short; see [Error Handling](/guides/error-handling/).
+
+<Callout title="Single-threaded">
+Tables are built on `Rc`, so they cannot be sent between threads. Give each thread its own tables, or convert to plain Rust types at thread boundaries.
+</Callout>

@@ -1,0 +1,122 @@
+Most code never names these types: keyed methods accept plain `&str`, integers, floats, booleans and tables through `AsKey`. They matter when you iterate (keys come back as `Key` or `KeyRef`) or write generic code.
+
+## `Key`
+
+```rust-sig
+pub enum Key {
+    Boolean(bool),
+    Integer(i64),
+    Number(u64),       // bits of a float that is neither NaN nor a whole number
+    String(Rc<str>),
+    Table(Table),      // compared and hashed by identity
+}
+```
+
+An owned, always-valid key. It cannot be nil or NaN, and a float with an integer value is always stored as `Integer`. A `Key::Table` keeps that table alive.
+
+**Implements:** `Clone`, `Debug`, `Display`, `PartialEq`, `Eq`, `Hash`, `AsKey`, `From<&str | String | Rc<str> | bool | Table>` and integer types, `TryFrom<Value>`, `TryFrom<&Value>`.
+
+### `try_from_value`
+
+```rust-sig
+pub fn try_from_value(value: &Value) -> Result<Key>
+```
+
+Converts a value, failing with `NilKey` or `InvalidKey`.
+
+### `from_f64`
+
+```rust-sig
+pub fn from_f64(n: f64) -> Result<Key>
+```
+
+The canonical key for a float: `Integer` when exact, `Number` otherwise, `InvalidKey` for NaN.
+
+### `as_str`
+
+```rust-sig
+pub fn as_str(&self) -> Option<&str>
+```
+
+### `as_integer`
+
+```rust-sig
+pub fn as_integer(&self) -> Option<i64>
+```
+
+### `to_value`
+
+```rust-sig
+pub fn to_value(&self) -> Value
+```
+
+The key as a value. `Value: From<Key>` does the same by move.
+
+### `as_key_ref`
+
+```rust-sig
+pub fn as_key_ref(&self) -> KeyRef<'_>
+```
+
+```rust
+use flextable::{Key, Value};
+
+assert_eq!(Key::from_f64(2.0), Ok(Key::Integer(2)));
+assert!(Key::from_f64(f64::NAN).is_err());
+assert_eq!(Key::try_from(Value::from("id")).unwrap().as_str(), Some("id"));
+assert_eq!(Key::from("id").to_string(), "id");
+```
+
+## `KeyRef`
+
+```rust-sig
+pub enum KeyRef<'a> {
+    Boolean(bool),
+    Integer(i64),
+    Number(u64),
+    String(&'a str),
+    Table(&'a Table),
+}
+```
+
+A borrowed, validated key. It is `Copy`, never allocates, and hashes exactly like the matching `Key`, which is how `t.get("name")` finds a field without building an owned key. [`TableRef::iter`](/api/table-ref/#iter) yields `KeyRef`s.
+
+### `to_key`
+
+```rust-sig
+pub fn to_key(self) -> Key
+```
+
+The owned form. Only string keys allocate.
+
+## `AsKey`
+
+```rust-sig
+pub trait AsKey {
+    fn key_ref(&self) -> Result<KeyRef<'_>>;
+    fn into_key(self) -> Result<Key> where Self: Sized { /* default */ }
+}
+```
+
+The trait every keyed `Table` method accepts. `key_ref` borrows the canonical key (errors for nil and NaN) and is all a lookup uses. `into_key` builds the owned key, and is only called when a new field is inserted; implementations for `Value`, `Rc<str>`, `Table` and `Key` reuse their existing allocation.
+
+**Implemented for:** `i8`, `i16`, `i32`, `i64`, `u8`, `u16`, `u32`, `isize`, `usize`, `u64`, `f64`, `bool`, `&str`, `String`, `&String`, `Rc<str>`, `Table`, `&Table`, `Key`, `&Key`, `KeyRef`, `Value`, `&Value`.
+
+`isize`, `usize` and `u64` values beyond the `i64` range become float keys, as Lua would store them.
+
+### Writing generic code
+
+```rust
+use flextable::{AsKey, Table};
+
+fn bump<K: AsKey + Copy>(t: &Table, key: K) -> flextable::Result<i64> {
+    let n = t.get_integer(key).unwrap_or(0) + 1;
+    t.set(key, n)?;
+    Ok(n)
+}
+
+let t = Table::new();
+bump(&t, "hits")?;
+assert_eq!(bump(&t, "hits")?, 2);
+assert_eq!(bump(&t, 7)?, 1);
+```

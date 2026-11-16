@@ -1,0 +1,46 @@
+If you know Lua, most of `flextable` will feel familiar: one structure for everything, 1-based sequences, nil deletes, and a `table` library with the same names. It is not a Lua table, though, and it does not try to be compatible with one. This page maps the two and lists every difference that could surprise you.
+
+## Side by side
+
+| Lua | flextable |
+| --- | --- |
+| `{}` | `Table::new()`, `table![]` |
+| `{1, 2, 3}` | `table![1, 2, 3]` |
+| `{x = 1, y = 2}` | `table! { "x" => 1, "y" => 2 }` |
+| `t[k]`, `t.name` | `t.get(k)`, `t.get_field("name")` |
+| `t[k] = v` | `t.set(k, v)?` |
+| `t[k] = nil` | `t.set(k, ())?` |
+| `#t` | `t.len()` |
+| `table.insert(t, v)` | `t.push(v)?` |
+| `table.insert(t, pos, v)` | `t.insert(pos, v)?` |
+| `table.remove(t)` | `t.pop()` |
+| `table.remove(t, pos)` | `t.remove(pos)?` |
+| `table.concat(t, sep, i, j)` | `t.concat(sep)?`, `t.concat_range(sep, i, j)?` |
+| `table.unpack(t, i, j)` | `t.unpack()`, `t.unpack_range(i, j)` |
+| `table.pack(...)` | `Table::pack(values)` |
+| `table.move(a1, f, e, t, a2)` | `a1.move_within(f, e, t)?`, `a1.move_to(f, e, t, &a2)?` |
+| `table.sort(t)`, `table.sort(t, comp)` | `t.sort()?`, `t.sort_unstable_by(cmp)` |
+| `pairs(t)`, `ipairs(t)`, `next(t, k)` | `t.pairs()`, `t.ipairs()`, `t.next(&k)?` |
+| `rawequal(a, b)` | `a == b` or `a.ptr_eq(&b)` |
+
+## What carries over
+
+- **1-based sequences** and the same rules for valid positions in `insert` and `remove`.
+- **nil deletes**, and nil and NaN cannot be keys.
+- **Integer normalization**: `t[1.0]` and `t[1]` are the same field.
+- **`#t` is a border** when the sequence has holes.
+- **Tables are references**, compared by identity.
+- **Clearing fields during `pairs`/`next`** is allowed.
+
+## What is different
+
+- **No metatables.** There is no `__index`, `__newindex`, operator overloading or `setmetatable`. Lookups are always raw.
+- **No functions or userdata as values.** The six value types are nil, boolean, integer, float, string and table.
+- **No weak tables, no garbage collector.** Tables are reference counted; a cycle stays alive until you break it.
+- **Errors are values.** Where Lua raises an error, `flextable` returns `Err`, and the table is left unchanged.
+- **Traversal order is defined**: sequence keys ascending, then the rest in insertion order.
+- **Popping an empty sequence.** Lua's `table.remove(t)` with `#t == 0` removes and returns `t[0]`. `t.pop()` returns nil and never touches key 0; call `t.remove(0)` for the Lua behaviour.
+- **`sort` only orders numbers or strings by default.** Mixed types return `Error::Incomparable` instead of calling `__lt`. Integers and floats compare exactly, and NaN sorts last instead of corrupting the order.
+- **Number formatting.** `concat` and `Display` print floats with Rust's shortest round-trip form, not C's `%.14g`, so very small or very large floats can print differently.
+- **No string coercion.** `"10"` is never treated as the number 10.
+- **Single-threaded handles** built on `Rc`, as a Lua state would be.
