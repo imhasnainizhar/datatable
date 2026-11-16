@@ -9,7 +9,7 @@ const nextConfig = {
   // Static HTML in out/, ready for GitHub Pages or any static host.
   output: "export",
   trailingSlash: true,
-  // Set DOCS_BASE_PATH=/datatable when serving from a GitHub Pages project URL.
+  // Set DOCS_BASE_PATH=/flextable when serving from a GitHub Pages project URL.
   basePath: process.env.DOCS_BASE_PATH || "",
   images: { unoptimized: true },
   pageExtensions: ["ts", "tsx", "mdx"],

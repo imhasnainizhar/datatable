@@ -92,7 +92,7 @@ assert_ne!(a, b);
 assert_eq!(a.dump(), b.dump());   // "{1, 2}"
 ```
 
-[`dump`](/api/table/#dump) renders a Lua-style constructor such as `{1, 2, name = "x"}`, which is handy for debugging and tests.
+[`dump`](/api/table/#dump) renders a table literal such as `{1, 2, name = "x"}`, which is handy for debugging and tests.
 
 <Callout type="warning" title="Cycles and memory">
 Tables are reference counted. A table that contains itself, directly or through other tables, is never freed until the cycle is broken, for example by calling `clear()` on one of them.

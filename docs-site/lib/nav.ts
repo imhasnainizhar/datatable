@@ -9,7 +9,7 @@ export type DocPage = {
   section: string;
 };
 
-export const GITHUB = "https://github.com/imhasnainizhar/datatable";
+export const GITHUB = "https://github.com/imhasnainizhar/flextable";
 export const VERSION = "0.1.0";
 
 export const NAV: { section: string; pages: DocPage[] }[] = [
@@ -42,7 +42,7 @@ export const NAV: { section: string; pages: DocPage[] }[] = [
       { slug: "guides/nesting-and-copying", title: "Nesting and Copying", description: "Tables are shared handles. Learn how nesting works and how to make shallow and deep copies, cycles included.", section: "Guides" },
       { slug: "guides/error-handling", title: "Error Handling", description: "The five ways a table operation can fail, and how to handle each one.", section: "Guides" },
       { slug: "guides/performance", title: "Performance", description: "How the table is built for speed, benchmark results, and habits that keep your code fast.", section: "Guides" },
-      { slug: "guides/coming-from-lua", title: "Coming from Lua", description: "flextable is inspired by Lua tables, not compatible with them. Here is what carries over and what differs.", section: "Guides" },
+      { slug: "guides/coming-from-lua", title: "Coming from Lua", description: "A side-by-side comparison for readers who know Lua tables: what is similar and what differs.", section: "Guides" },
     ],
   },
   {

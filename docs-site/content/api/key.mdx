@@ -102,7 +102,7 @@ The trait every keyed `Table` method accepts. `key_ref` borrows the canonical ke
 
 **Implemented for:** `i8`, `i16`, `i32`, `i64`, `u8`, `u16`, `u32`, `isize`, `usize`, `u64`, `f64`, `bool`, `&str`, `String`, `&String`, `Rc<str>`, `Table`, `&Table`, `Key`, `&Key`, `KeyRef`, `Value`, `&Value`.
 
-`isize`, `usize` and `u64` values beyond the `i64` range become float keys, as Lua would store them.
+`isize`, `usize` and `u64` values beyond the `i64` range become float keys.
 
 ### Writing generic code
 
