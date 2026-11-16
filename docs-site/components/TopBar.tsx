@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { GITHUB, VERSION } from "@/lib/nav";
+import { CRATES_IO, GITHUB, VERSION } from "@/lib/nav";
 
 function setNav(open: boolean) {
   document.body.classList.toggle("nav-open", open);
@@ -86,6 +86,18 @@ export function TopBar() {
               <span className="search-label">Search docs</span>
               <kbd className="search-kbd">{mac ? "⌘K" : "Ctrl K"}</kbd>
             </button>
+            <a className="icon-button" href={CRATES_IO} aria-label="flextable on crates.io" title="crates.io">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinejoin="round"
+                  d="M12 2.8 20 7.2v9.6L12 21.2 4 16.8V7.2L12 2.8Z"
+                />
+                <path fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" d="M4 7.2 12 11.6l8-4.4M12 11.6v9.6" />
+              </svg>
+            </a>
             <a className="icon-button" href={GITHUB} aria-label="flextable on GitHub">
               <svg viewBox="0 0 16 16" aria-hidden="true">
                 <path

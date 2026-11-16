@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CopyButton } from "@/components/CopyButton";
 import { highlightToHtml } from "@/components/Mdx";
-import { GITHUB } from "@/lib/nav";
+import { CRATES_IO, GITHUB } from "@/lib/nav";
 
 export const metadata: Metadata = {
   title: { absolute: "flextable: The Flexible Table for Rust" },
@@ -98,6 +98,7 @@ const FOOTER = [
     title: "Project",
     links: [
       ["GitHub", GITHUB],
+      ["crates.io", CRATES_IO],
       ["Issues", `${GITHUB}/issues`],
       ["License", `${GITHUB}/blob/main/LICENSE`],
     ],

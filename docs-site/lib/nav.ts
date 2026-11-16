@@ -10,6 +10,7 @@ export type DocPage = {
 };
 
 export const GITHUB = "https://github.com/imhasnainizhar/flextable";
+export const CRATES_IO = "https://crates.io/crates/flextable";
 export const VERSION = "0.1.0";
 
 export const NAV: { section: string; pages: DocPage[] }[] = [
