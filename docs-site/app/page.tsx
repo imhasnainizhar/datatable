@@ -5,7 +5,7 @@ import { highlightToHtml } from "@/components/Mdx";
 import { GITHUB } from "@/lib/nav";
 
 export const metadata: Metadata = {
-  title: { absolute: "datatable: the flexible table for Rust" },
+  title: { absolute: "datatable: The Flexible Table for Rust" },
   description:
     "One fast, dynamic table for Rust that works as an array, a dictionary, a record or a set.",
 };
@@ -120,7 +120,7 @@ export default async function Home() {
           </text>
         </svg>
         <h1 className="hero-title">
-          The flexible table
+          The Flexible Table
           <br />
           for Rust
         </h1>
