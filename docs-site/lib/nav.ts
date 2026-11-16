@@ -17,14 +17,6 @@ export const NAV: { section: string; pages: DocPage[] }[] = [
     section: "",
     pages: [
       {
-        slug: "",
-        title: "Introduction",
-        heading: "Welcome to the datatable docs",
-        description:
-          "datatable gives Rust one dynamic container that works as an array, a dictionary, a record or a set, with an API inspired by Lua tables.",
-        section: "",
-      },
-      {
         slug: "whats-new",
         title: "What's New in 0.1.0",
         nav: "What's New",

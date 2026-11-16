@@ -38,6 +38,7 @@ export function TopBar() {
       <header className="topbar">
         <div className="topbar-inner">
           <button
+            hidden={pathname === "/"}
             className="icon-button menu-button"
             type="button"
             aria-label="Open navigation"
@@ -61,7 +62,7 @@ export function TopBar() {
           </Link>
           <span className="version">v{VERSION}</span>
           <nav className="topnav" aria-label="Primary">
-            <Link href="/" className={!inApi && !inNews ? "active" : undefined}>
+            <Link href="/getting-started/installation/" className={!inApi && !inNews && pathname !== "/" ? "active" : undefined}>
               Docs
             </Link>
             <Link href="/api/" className={inApi ? "active" : undefined}>

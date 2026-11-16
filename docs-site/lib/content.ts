@@ -7,7 +7,6 @@ type MDXModule = { default: ComponentType };
 
 // Explicit imports keep every page visible to the bundler.
 const LOADERS: Record<string, () => Promise<MDXModule>> = {
-  "": () => import("@/content/index.mdx"),
   "whats-new": () => import("@/content/whats-new.mdx"),
   "getting-started/installation": () => import("@/content/getting-started/installation.mdx"),
   "getting-started/quick-start": () => import("@/content/getting-started/quick-start.mdx"),
@@ -33,7 +32,7 @@ export function loadPage(slug: string): Promise<MDXModule> {
 }
 
 export function sourcePath(slug: string): string {
-  const file = slug === "" ? "index" : slug === "api" ? "api/index" : slug;
+  const file = slug === "api" ? "api/index" : slug;
   return path.join(process.cwd(), "content", `${file}.mdx`);
 }
 

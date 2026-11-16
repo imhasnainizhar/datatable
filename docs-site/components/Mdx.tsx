@@ -51,6 +51,15 @@ function getHighlighter() {
   return highlighter;
 }
 
+export async function highlightToHtml(code: string, lang: string): Promise<string> {
+  const hl = await getHighlighter();
+  return hl.codeToHtml(code, {
+    lang: ["rust", "toml", "bash"].includes(lang) ? lang : "text",
+    themes: { light: "github-light", dark: "github-dark" },
+    defaultColor: false,
+  });
+}
+
 const LABELS: Record<string, string> = { rust: "Rust", toml: "TOML", bash: "Terminal", text: "Output" };
 
 async function CodeBlock({ children }: { children?: ReactNode }) {

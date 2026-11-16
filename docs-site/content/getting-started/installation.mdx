@@ -1,3 +1,11 @@
+## Before you start
+
+These docs assume you are comfortable with basic Rust: ownership and borrowing, `Result` and the `?` operator, and iterators. Knowing `Rc` and `RefCell` helps explain why tables behave like shared references, but it is not required.
+
+<Callout title="About the examples">
+Every Rust example in these docs is compiled and run against the library, so the `assert_eq!` lines are real results. Examples that use `?` are assumed to sit inside a function that returns a `Result`.
+</Callout>
+
 ## Requirements
 
 - A Rust toolchain with Cargo. The crate uses the 2021 edition and is tested on current stable Rust on Linux and Windows.

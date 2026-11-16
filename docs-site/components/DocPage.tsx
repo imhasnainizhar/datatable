@@ -9,7 +9,7 @@ export async function DocPage({ slug }: { slug: string }) {
   const index = PAGES.findIndex((p) => p.slug === slug);
   const prev = PAGES[index - 1];
   const next = PAGES[index + 1];
-  const file = slug === "" ? "index" : slug === "api" ? "api/index" : slug;
+  const file = slug === "api" ? "api/index" : slug;
 
   return (
     <div className="layout">

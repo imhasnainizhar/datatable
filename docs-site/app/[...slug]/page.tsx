@@ -8,7 +8,7 @@ type Props = { params: Promise<{ slug: string[] }> };
 export const dynamicParams = false;
 
 export function generateStaticParams() {
-  return PAGES.filter((p) => p.slug !== "").map((p) => ({ slug: p.slug.split("/") }));
+  return PAGES.map((p) => ({ slug: p.slug.split("/") }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
