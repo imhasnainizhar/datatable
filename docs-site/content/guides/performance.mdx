@@ -47,7 +47,7 @@ A `Vec<i64>` stores 8 bytes per element against 24 for a dynamic value, so it wi
 ### Preallocate when you know the size
 
 ```rust
-use datatable::Table;
+use flextable::Table;
 
 let t = Table::with_capacity(10_000, 16);   // 10,000 sequence slots, 16 named fields
 for i in 0..10_000 {
@@ -65,7 +65,7 @@ Appending is O(1). Filling `t[n]` down to `t[1]` puts every key in the hash part
 `get` and `pairs` return owned values, which costs a reference-count update for strings and tables. In loops that only read, use the typed getters or a borrowed view:
 
 ```rust
-use datatable::{table, Value};
+use flextable::{table, Value};
 
 let t = table! { "hp" => 90, "name" => "Ada" };
 let hp = t.get_integer("hp").unwrap();          // no clone

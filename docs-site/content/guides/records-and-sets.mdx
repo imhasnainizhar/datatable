@@ -5,7 +5,7 @@ Any key that is not part of the sequence lives in the table's hash part. That is
 String keys work like struct fields. [`get_field`](/api/table/#get_field) and [`set_field`](/api/table/#set_field) are spelled-out aliases for `get` and `set` with a `&str`.
 
 ```rust
-use datatable::{table, Value};
+use flextable::{table, Value};
 
 let user = table! { "name" => "Ada", "age" => 36, "admin" => true };
 user.set_field("email", "ada@example.com")?;
@@ -33,7 +33,7 @@ For strings and nested tables, use `get(k).as_str()` / `as_table()`, or borrow w
 Keys are not limited to strings. Integers outside the sequence, floats, booleans and tables all work. Fields keep their insertion order when you iterate.
 
 ```rust
-use datatable::{Table, Value};
+use flextable::{Table, Value};
 
 let codes = Table::new();
 codes.set(404, "Not Found")?;          // sparse integers stay in the hash part
@@ -51,7 +51,7 @@ assert_eq!(keys, ["404", "200", "0.5", "false"]);   // insertion order
 ### Counting with a dictionary
 
 ```rust
-use datatable::Table;
+use flextable::Table;
 
 let counts = Table::new();
 for word in "the cat and the hat and the bat".split(' ') {
@@ -67,7 +67,7 @@ assert_eq!(counts.get_integer("and"), Some(2));
 A set is a table whose keys map to `true`. [`set_add`](/api/table/#set_add), [`set_contains`](/api/table/#set_contains) and [`set_remove`](/api/table/#set_remove) say what you mean:
 
 ```rust
-use datatable::Table;
+use flextable::Table;
 
 let seen = Table::new();
 seen.set_add("alice")?;
@@ -87,7 +87,7 @@ assert!(!seen.set_remove("bob"));    // false: already gone
 Nothing stops one table from being all of these at once, which is often the point:
 
 ```rust
-use datatable::table;
+use flextable::table;
 
 let module = table!["first", "second"];        // a sequence...
 module.set("name", "demo")?;                   // ...with named fields
@@ -102,7 +102,7 @@ assert_eq!(module.field_count(), 4);
 Set a field to nil (`Value::Nil` or `()`) to delete it, or clear everything with [`clear`](/api/table/#clear), which keeps the allocated capacity for reuse.
 
 ```rust
-use datatable::table;
+use flextable::table;
 
 let t = table! { "a" => 1, "b" => 2 };
 t.set("a", ())?;

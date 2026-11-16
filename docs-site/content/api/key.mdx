@@ -59,7 +59,7 @@ pub fn as_key_ref(&self) -> KeyRef<'_>
 ```
 
 ```rust
-use datatable::{Key, Value};
+use flextable::{Key, Value};
 
 assert_eq!(Key::from_f64(2.0), Ok(Key::Integer(2)));
 assert!(Key::from_f64(f64::NAN).is_err());
@@ -107,9 +107,9 @@ The trait every keyed `Table` method accepts. `key_ref` borrows the canonical ke
 ### Writing generic code
 
 ```rust
-use datatable::{AsKey, Table};
+use flextable::{AsKey, Table};
 
-fn bump<K: AsKey + Copy>(t: &Table, key: K) -> datatable::Result<i64> {
+fn bump<K: AsKey + Copy>(t: &Table, key: K) -> flextable::Result<i64> {
     let n = t.get_integer(key).unwrap_or(0) + 1;
     t.set(key, n)?;
     Ok(n)

@@ -59,7 +59,7 @@ export async function DocPage({ slug }: { slug: string }) {
           </nav>
           <footer className="page-footer">
             <a href={`${GITHUB}/edit/main/docs-site/content/${file}.mdx`}>Edit this page on GitHub</a>
-            <span>datatable {VERSION} · Apache-2.0</span>
+            <span>flextable {VERSION} · Apache-2.0</span>
           </footer>
         </article>
       </main>

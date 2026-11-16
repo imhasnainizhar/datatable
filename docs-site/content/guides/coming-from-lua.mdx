@@ -1,8 +1,8 @@
-If you know Lua, most of `datatable` will feel familiar: one structure for everything, 1-based sequences, nil deletes, and a `table` library with the same names. It is not a Lua table, though, and it does not try to be compatible with one. This page maps the two and lists every difference that could surprise you.
+If you know Lua, most of `flextable` will feel familiar: one structure for everything, 1-based sequences, nil deletes, and a `table` library with the same names. It is not a Lua table, though, and it does not try to be compatible with one. This page maps the two and lists every difference that could surprise you.
 
 ## Side by side
 
-| Lua | datatable |
+| Lua | flextable |
 | --- | --- |
 | `{}` | `Table::new()`, `table![]` |
 | `{1, 2, 3}` | `table![1, 2, 3]` |
@@ -37,7 +37,7 @@ If you know Lua, most of `datatable` will feel familiar: one structure for every
 - **No metatables.** There is no `__index`, `__newindex`, operator overloading or `setmetatable`. Lookups are always raw.
 - **No functions or userdata as values.** The six value types are nil, boolean, integer, float, string and table.
 - **No weak tables, no garbage collector.** Tables are reference counted; a cycle stays alive until you break it.
-- **Errors are values.** Where Lua raises an error, `datatable` returns `Err`, and the table is left unchanged.
+- **Errors are values.** Where Lua raises an error, `flextable` returns `Err`, and the table is left unchanged.
 - **Traversal order is defined**: sequence keys ascending, then the rest in insertion order.
 - **Popping an empty sequence.** Lua's `table.remove(t)` with `#t == 0` removes and returns `t[0]`. `t.pop()` returns nil and never touches key 0; call `t.remove(0)` for the Lua behaviour.
 - **`sort` only orders numbers or strings by default.** Mixed types return `Error::Incomparable` instead of calling `__lt`. Integers and floats compare exactly, and NaN sorts last instead of corrupting the order.

@@ -11,7 +11,7 @@ Table operations fail in exactly five ways, each a variant of [`Error`](/api/err
 | `PositionOutOfBounds` | `insert`, `remove`, `move_within`, `move_to` | a position outside the allowed range |
 
 ```rust
-use datatable::{table, Error, Value};
+use flextable::{table, Error, Value};
 
 let t = table![1, 2, 3];
 assert_eq!(t.set(Value::Nil, 1), Err(Error::NilKey));
@@ -27,10 +27,10 @@ A failed operation leaves the table unchanged.
 
 ## Using `?`
 
-`Error` implements `std::error::Error`, so it works with `?` in functions returning `datatable::Result`, `Box<dyn Error>`, or error types from crates like `anyhow`.
+`Error` implements `std::error::Error`, so it works with `?` in functions returning `flextable::Result`, `Box<dyn Error>`, or error types from crates like `anyhow`.
 
 ```rust
-use datatable::{Result, Table};
+use flextable::{Result, Table};
 
 fn build() -> Result<Table> {
     let t = Table::new();
@@ -48,7 +48,7 @@ assert_eq!(t.field_count(), 2);
 `Display` produces short, human-readable messages:
 
 ```rust
-use datatable::Error;
+use flextable::Error;
 
 assert_eq!(Error::NilKey.to_string(), "nil cannot be used as a table key");
 assert_eq!(

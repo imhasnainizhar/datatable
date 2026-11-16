@@ -36,7 +36,7 @@ where I: IntoIterator<Item = V>, V: Into<Value>
 A sequence table from values, like `{a, b, c}`. Nil values become holes; trailing nils are dropped. `Table: FromIterator<Value>` does the same, so `collect()` works.
 
 ```rust
-use datatable::Table;
+use flextable::Table;
 
 let t = Table::from_seq(["a", "b"]);
 assert_eq!(t.len(), 2);
@@ -54,7 +54,7 @@ where I: IntoIterator<Item = (K, V)>, K: AsKey, V: Into<Value>
 A table from key/value pairs, like `{k1 = v1, k2 = v2}`.
 
 ```rust
-use datatable::Table;
+use flextable::Table;
 
 let t = Table::from_pairs([("x", 1), ("y", 2)]);
 assert_eq!(t.get_integer("y"), Some(2));
@@ -112,7 +112,7 @@ pub fn set<K: AsKey, V: Into<Value>>(&self, key: K, value: V) -> Result<()>
 `t[key] = value`. A nil value deletes the field. Errors with `NilKey` or `InvalidKey` (NaN) only. Overwriting an existing field never allocates.
 
 ```rust
-use datatable::{Table, Value};
+use flextable::{Table, Value};
 
 let t = Table::new();
 t.set("k", 1)?;
@@ -479,7 +479,7 @@ pub fn dump(&self) -> String
 Renders the contents as a Lua-style constructor for debugging. Tables already being printed show as `<cycle>`.
 
 ```rust
-use datatable::table;
+use flextable::table;
 
 let t = table![1, "two"];
 t.set("k", 1.5)?;

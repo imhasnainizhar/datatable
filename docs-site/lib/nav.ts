@@ -28,7 +28,7 @@ export const NAV: { section: string; pages: DocPage[] }[] = [
   {
     section: "Getting Started",
     pages: [
-      { slug: "getting-started/installation", title: "Installation", description: "Add datatable to a Rust project and check that everything works.", section: "Getting Started" },
+      { slug: "getting-started/installation", title: "Installation", description: "Add flextable to a Rust project and check that everything works.", section: "Getting Started" },
       { slug: "getting-started/quick-start", title: "Quick Start", description: "Build a small inventory program and meet the core of the API in about five minutes.", section: "Getting Started" },
       { slug: "getting-started/core-concepts", title: "Core Concepts", description: "Seven rules explain how every table method behaves. Learn them once and the rest of the API is predictable.", section: "Getting Started" },
     ],
@@ -42,7 +42,7 @@ export const NAV: { section: string; pages: DocPage[] }[] = [
       { slug: "guides/nesting-and-copying", title: "Nesting and Copying", description: "Tables are shared handles. Learn how nesting works and how to make shallow and deep copies, cycles included.", section: "Guides" },
       { slug: "guides/error-handling", title: "Error Handling", description: "The five ways a table operation can fail, and how to handle each one.", section: "Guides" },
       { slug: "guides/performance", title: "Performance", description: "How the table is built for speed, benchmark results, and habits that keep your code fast.", section: "Guides" },
-      { slug: "guides/coming-from-lua", title: "Coming from Lua", description: "datatable is inspired by Lua tables, not compatible with them. Here is what carries over and what differs.", section: "Guides" },
+      { slug: "guides/coming-from-lua", title: "Coming from Lua", description: "flextable is inspired by Lua tables, not compatible with them. Here is what carries over and what differs.", section: "Guides" },
     ],
   },
   {

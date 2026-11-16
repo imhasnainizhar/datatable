@@ -6,9 +6,9 @@ This walkthrough builds a tiny game inventory, touching each part of a table alo
 
 ```rust
 // file: src/main.rs
-use datatable::{Table, Value};
+use flextable::{Table, Value};
 
-fn main() -> datatable::Result<()> {
+fn main() -> flextable::Result<()> {
     let hero = Table::new();
     hero.set("name", "Ada")?;
     hero.set("gold", 120)?;
@@ -28,7 +28,7 @@ The table is not declared `mut`. Tables use interior mutability, so every method
 Every table also has a numbered sequence, starting at position 1. [`push`](/api/table/#push) appends, [`len`](/api/table/#len) returns its length, and [`pop`](/api/table/#pop) removes the last item.
 
 ```rust
-use datatable::{Table, Value};
+use flextable::{Table, Value};
 
 let bag = Table::new();
 bag.push("potion")?;
@@ -48,7 +48,7 @@ assert_eq!(bag.concat(", ")?, "map, potion, rope");
 A table stored inside another table is a handle, so changes made through either one are visible through both.
 
 ```rust
-use datatable::{Table, Value};
+use flextable::{Table, Value};
 
 let hero = Table::new();
 let bag = Table::new();
@@ -66,7 +66,7 @@ assert_eq!(inside.get(1), Value::from("compass")); // ...and the nested one sees
 The [`table!`](/api/table-macro/) macro takes a list for a sequence, or `key => value` pairs for named fields.
 
 ```rust
-use datatable::table;
+use flextable::table;
 
 let prices = table! { "potion" => 25, "rope" => 8, "lantern" => 40 };
 let order = table!["rope", "potion", "potion"];
@@ -85,7 +85,7 @@ assert_eq!(total, 58);
 Writes return a [`Result`](/api/error/). Errors are rare and specific: nil or NaN keys, positions outside the sequence, or sorting values that cannot be compared.
 
 ```rust
-use datatable::{table, Error, Value};
+use flextable::{table, Error, Value};
 
 let t = table![1, 2, 3];
 assert_eq!(t.set(Value::Nil, "x"), Err(Error::NilKey));
@@ -99,9 +99,9 @@ assert!(t.sort().is_err());   // numbers and strings cannot be compared
 
 ```rust
 // file: src/main.rs
-use datatable::{table, Table};
+use flextable::{table, Table};
 
-fn main() -> datatable::Result<()> {
+fn main() -> flextable::Result<()> {
     let prices = table! { "potion" => 25, "rope" => 8, "lantern" => 40 };
 
     let hero = Table::new();

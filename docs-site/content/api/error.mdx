@@ -33,7 +33,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 Returned by every fallible table operation. See [Error Handling](/guides/error-handling/) for which methods return which errors.
 
 ```rust
-use datatable::{table, Error};
+use flextable::{table, Error};
 
 let t = table!["a"];
 match t.insert(5, "b") {

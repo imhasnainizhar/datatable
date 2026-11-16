@@ -25,7 +25,7 @@ Any value can be a key except two:
 Numeric keys are normalized: a float holding a whole number is the same key as the integer. Strings compare by content, and tables by identity.
 
 ```rust
-use datatable::{Table, Value};
+use flextable::{Table, Value};
 
 let t = Table::new();
 t.set(1.0, "one")?;
@@ -43,7 +43,7 @@ assert_eq!(t.get(Table::new()), Value::Nil);  // a different table is a differen
 There is no separate "remove field" method. Setting a field to nil deletes it, and reading a missing field returns nil.
 
 ```rust
-use datatable::{Table, Value};
+use flextable::{Table, Value};
 
 let t = Table::new();
 t.set("x", 10)?;
@@ -61,7 +61,7 @@ Integer keys from 1 upward form the table's *sequence*. Positions are 1-based: t
 [`len`](/api/table/#len) returns the length of the sequence and [`field_count`](/api/table/#field_count) counts every field. Both are constant time.
 
 ```rust
-use datatable::table;
+use flextable::table;
 
 let t = table!["a", "b", "c"];
 t.set("label", "letters")?;
@@ -76,7 +76,7 @@ assert_eq!(t.field_count(), 5);  // plus "label" and 0
 Setting a middle element to nil creates a hole. `len` then returns a *border*: a position `n` where `t[n]` is set and `t[n + 1]` is not. With holes, several borders can exist, and which one you get depends on how the table was built. Code that needs an exact count should avoid holes or use `field_count`.
 
 ```rust
-use datatable::{table, Value};
+use flextable::{table, Value};
 
 let t = table![1, 2, 3, 4];
 t.set(2, Value::Nil)?;             // a hole in the middle
@@ -92,7 +92,7 @@ assert_eq!(t.len(), 3);
 A `Table` is a handle to shared storage, like an `Rc`. Cloning it, storing it in another table, or passing it to a function all share the same contents. Two handles are equal only if they point to the same table.
 
 ```rust
-use datatable::table;
+use flextable::table;
 
 let a = table![1, 2];
 let b = a.clone();         // same table
@@ -118,7 +118,7 @@ Interior mutability has one runtime rule: you cannot modify a table while it is 
 Modifying the same table inside one of those panics. The `pairs` and `ipairs` iterators hold no borrow between items, so changing the table during those loops is allowed.
 
 ```rust-panic
-use datatable::table;
+use flextable::table;
 
 let t = table![1, 2, 3];
 t.for_each(|_, _| {
@@ -128,7 +128,7 @@ t.for_each(|_, _| {
 
 ## Errors are values
 
-Operations that can fail return [`datatable::Result`](/api/error/) instead of panicking. Reads never fail: an invalid key simply finds nothing. The full list is short; see [Error Handling](/guides/error-handling/).
+Operations that can fail return [`flextable::Result`](/api/error/) instead of panicking. Reads never fail: an invalid key simply finds nothing. The full list is short; see [Error Handling](/guides/error-handling/).
 
 <Callout title="Single-threaded">
 Tables are built on `Rc`, so they cannot be sent between threads. Give each thread its own tables, or convert to plain Rust types at thread boundaries.

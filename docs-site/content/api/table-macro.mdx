@@ -13,7 +13,7 @@ Trailing commas are allowed. Brackets and braces are interchangeable, as with an
 Each value goes through `Value::from`, so values of different types can be mixed. Equivalent to [`Table::from_seq`](/api/table/#from_seq).
 
 ```rust
-use datatable::{table, Value};
+use flextable::{table, Value};
 
 let t = table![1, "two", 3.0, true];
 assert_eq!(t.len(), 4);
@@ -25,7 +25,7 @@ assert_eq!(t.get(2), Value::from("two"));
 Each pair becomes a `set(key, value)` call. Keys are anything that implements [`AsKey`](/api/key/#askey); values anything that implements `Into<Value>`. Tables nest naturally.
 
 ```rust
-use datatable::table;
+use flextable::table;
 
 let server = table! {
     "host" => "localhost",

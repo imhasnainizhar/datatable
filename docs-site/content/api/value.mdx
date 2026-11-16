@@ -108,7 +108,7 @@ pub fn take(&mut self) -> Value
 Moves the value out, leaving `Nil`.
 
 ```rust
-use datatable::Value;
+use flextable::Value;
 
 assert_eq!(Value::from(3.0).as_integer(), Some(3));
 assert_eq!(Value::from(3.5).as_integer(), None);
@@ -140,7 +140,7 @@ pub fn try_cmp(&self, other: &Value) -> Result<Ordering>
 
 ```rust
 use std::cmp::Ordering;
-use datatable::Value;
+use flextable::Value;
 
 assert_eq!(Value::from(1).lua_cmp(&Value::from(1.5)), Some(Ordering::Less));
 assert_eq!(Value::from("b").lua_cmp(&Value::from("a")), Some(Ordering::Greater));
@@ -153,7 +153,7 @@ assert!(Value::from(true).try_cmp(&Value::from(false)).is_err());
 `Display` is Lua's `tostring`: strings print without quotes, whole-number floats keep `.0`, and tables print as `table: 0x…`. `Debug` is the same except that strings are quoted.
 
 ```rust
-use datatable::Value;
+use flextable::Value;
 
 assert_eq!(Value::from(2.0).to_string(), "2.0");
 assert_eq!(Value::from("hi").to_string(), "hi");

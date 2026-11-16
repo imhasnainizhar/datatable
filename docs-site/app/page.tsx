@@ -5,14 +5,14 @@ import { highlightToHtml } from "@/components/Mdx";
 import { GITHUB } from "@/lib/nav";
 
 export const metadata: Metadata = {
-  title: { absolute: "datatable: The Flexible Table for Rust" },
+  title: { absolute: "flextable: The Flexible Table for Rust" },
   description:
     "One fast, dynamic table for Rust that works as an array, a dictionary, a record or a set.",
 };
 
-const INSTALL = "cargo add datatable --git https://github.com/imhasnainizhar/datatable";
+const INSTALL = "cargo add flextable --git https://github.com/imhasnainizhar/datatable";
 
-const SHOWCASE = `use datatable::{table, Table, Value};
+const SHOWCASE = `use flextable::{table, Table, Value};
 
 let player = Table::new();
 player.set("name", "Ada")?;          // named fields
@@ -116,7 +116,7 @@ export default async function Home() {
       <section className="hero">
         <svg className="hero-mark" viewBox="0 0 1200 230" aria-hidden="true" focusable="false">
           <text x="600" y="205" textAnchor="middle" textLength="1180" lengthAdjust="spacingAndGlyphs">
-            DATATABLE
+            FLEXTABLE
           </text>
         </svg>
         <h1 className="hero-title">
@@ -168,7 +168,7 @@ export default async function Home() {
 
       <section className="features">
         <p className="section-eyebrow">Features</p>
-        <h2>What&apos;s in datatable?</h2>
+        <h2>What&apos;s in flextable?</h2>
         <div className="feature-grid">
           {FEATURES.map((f) => (
             <Link key={f.title} className="feature" href={f.href}>
@@ -204,7 +204,7 @@ export default async function Home() {
       <footer className="site-footer">
         <div className="site-footer-inner">
           <div className="footer-brand">
-            <span className="brand-name">datatable</span>
+            <span className="brand-name">flextable</span>
             <span>A flexible table type for Rust. Apache-2.0.</span>
           </div>
           {FOOTER.map((col) => (

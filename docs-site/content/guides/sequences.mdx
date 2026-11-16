@@ -7,7 +7,7 @@ The first element is at position 1 and the last at `len()`. `get`, `set`, `inser
 ## Creating a sequence
 
 ```rust
-use datatable::{table, Table, Value};
+use flextable::{table, Table, Value};
 
 let a = table![10, 20, 30];                       // literal
 let b = Table::from_seq(vec![10, 20, 30]);        // from any iterator of values
@@ -24,7 +24,7 @@ Values in one sequence can have different types: `table![1, "two", 3.0, true]` i
 ## Reading elements
 
 ```rust
-use datatable::{table, Value};
+use flextable::{table, Value};
 
 let t = table!["a", "b", "c"];
 
@@ -40,7 +40,7 @@ for (i, v) in t.ipairs() {
 For bulk reads, borrow the sequence as a slice. Nothing is cloned, and every slice method is available. Slice index `i` is position `i + 1`.
 
 ```rust
-use datatable::table;
+use flextable::table;
 
 let t = table![3, 1, 4, 1, 5];
 let total: i64 = t.with_slice(|s| s.iter().filter_map(|v| v.as_integer()).sum());
@@ -55,7 +55,7 @@ assert_eq!(t.borrow().as_slice().len(), 5);
 [`push`](/api/table/#push) appends and [`pop`](/api/table/#pop) removes the last element, both amortized O(1). Setting position `len() + 1` is the same as a push.
 
 ```rust
-use datatable::{Table, Value};
+use flextable::{Table, Value};
 
 let stack = Table::new();
 stack.push(1)?;
@@ -74,7 +74,7 @@ assert_eq!(stack.pop(), Value::Nil);   // popping an empty sequence is not an er
 [`insert`](/api/table/#insert) shifts later elements up and [`remove`](/api/table/#remove) shifts them down. Valid positions are `1..=len() + 1`.
 
 ```rust
-use datatable::{table, Error, Value};
+use flextable::{table, Error, Value};
 
 let t = table!["a", "c"];
 t.insert(2, "b")?;                         // a, b, c
@@ -93,7 +93,7 @@ assert_eq!(t.insert(0, "x"), Err(Error::PositionOutOfBounds { position: 0, len: 
 [`concat`](/api/table/#concat) joins the sequence with a separator. Every element must be a string or a number. Whole-number floats keep a `.0`.
 
 ```rust
-use datatable::table;
+use flextable::table;
 
 let t = table!["x", 1, 2.5, 3.0];
 assert_eq!(t.concat(", ")?, "x, 1, 2.5, 3.0");
@@ -108,7 +108,7 @@ assert!(t.concat("").is_err());   // booleans cannot be joined
 [`sort`](/api/table/#sort) orders the sequence ascending. It accepts all numbers (integers and floats can mix) or all strings; anything else returns `Error::Incomparable` and leaves the table unchanged.
 
 ```rust
-use datatable::table;
+use flextable::table;
 
 let n = table![3, 1.5, 2, -7];
 n.sort()?;
@@ -122,7 +122,7 @@ assert_eq!(s.concat(" ")?, "Apple fig pear");   // byte order: uppercase first
 For any other order, pass a comparator. `sort_by` is stable; `sort_unstable_by` is usually faster and allocates nothing.
 
 ```rust
-use datatable::table;
+use flextable::table;
 
 let words = table!["kiwi", "fig", "banana", "date"];
 words.sort_by(|a, b| {
@@ -144,7 +144,7 @@ The comparator must not touch the table being sorted (it is borrowed, and touchi
 [`move_within(f, e, pos)`](/api/table/#move_within) copies positions `f..=e` to start at `pos`; overlaps are handled. [`move_to`](/api/table/#move_to) copies into another table. The source is not cleared.
 
 ```rust
-use datatable::table;
+use flextable::table;
 
 let t = table![1, 2, 3, 4, 5];
 t.move_within(1, 3, 3)?;                 // overlapping copy to the right
@@ -161,7 +161,7 @@ assert_eq!(dst.concat(",")?, "x,a,b,c");
 A sequence cannot end in nil, so trailing nils would be lost. [`Table::pack`](/api/table/#pack) records the original count in field `"n"`:
 
 ```rust
-use datatable::{Table, Value};
+use flextable::{Table, Value};
 
 let args = Table::pack([Value::from(1), Value::Nil, Value::from(3), Value::Nil]);
 assert_eq!(args.get_integer("n"), Some(4));

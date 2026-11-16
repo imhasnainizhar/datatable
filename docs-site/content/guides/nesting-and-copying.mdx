@@ -3,7 +3,7 @@
 Store a table as a value to build trees, documents and object graphs. What is stored is a handle: the nested table is shared, not copied.
 
 ```rust
-use datatable::{table, Value};
+use flextable::{table, Value};
 
 let config = table! {
     "name" => "server",
@@ -24,7 +24,7 @@ A `Vec` converts straight into a nested sequence: `t.set("tags", vec!["a", "b"])
 Each level is a `get` plus `as_table`. A small helper keeps it readable:
 
 ```rust
-use datatable::{table, Table, Value};
+use flextable::{table, Table, Value};
 
 fn path(t: &Table, keys: &[&str]) -> Value {
     let mut current = Value::from(t);
@@ -51,7 +51,7 @@ assert_eq!(path(&doc, &["a", "x", "c"]), Value::Nil);
 | a fully independent tree | [`deep_clone()`](/api/table/#deep_clone) | copied |
 
 ```rust
-use datatable::table;
+use flextable::table;
 
 let inner = table![1];
 let outer = table! { "inner" => &inner };
@@ -69,7 +69,7 @@ assert_eq!(deep.get("inner").as_table().unwrap().len(), 1);    // independent
 `deep_clone` copies each reachable table exactly once. Two fields pointing to the same child still point to one (new) child in the copy, and a table that contains itself is reproduced instead of recursing forever. Tables used as keys are copied the same way.
 
 ```rust
-use datatable::{table, Table};
+use flextable::{table, Table};
 
 let node = Table::new();
 node.set("self", &node)?;
@@ -84,7 +84,7 @@ assert_eq!(copy.get("self").as_table().unwrap(), &copy);
 Tables compare by identity: `==` asks "same table?", never "same contents?". That makes them usable as keys and in `HashSet`s. To compare contents, iterate both or compare `dump()` output.
 
 ```rust
-use datatable::table;
+use flextable::table;
 
 let a = table![1, 2];
 let b = table![1, 2];

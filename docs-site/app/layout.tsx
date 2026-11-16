@@ -7,7 +7,7 @@ import { searchIndex } from "@/lib/content";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: { default: "datatable: a flexible table type for Rust", template: "%s | datatable" },
+  title: { default: "flextable: a flexible table type for Rust", template: "%s | flextable" },
   description: "One dynamic container for Rust that works as an array, a dictionary, a record or a set.",
 };
 

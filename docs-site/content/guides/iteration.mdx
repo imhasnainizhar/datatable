@@ -14,7 +14,7 @@ Use `pairs`/`ipairs` by default. Switch to `borrow().iter()` or `for_each` in ho
 All full traversals use the same order: sequence keys first, ascending, then the other keys in the order they were first inserted. The order is deterministic, unlike Lua's.
 
 ```rust
-use datatable::table;
+use flextable::table;
 
 let t = table![10, 20];
 t.set("b", 1)?;
@@ -30,7 +30,7 @@ assert_eq!(keys, ["1", "2", "b", "a", "true"]);
 `pairs` visits every field. It keeps a cursor rather than a borrow, so you may assign to or clear fields while looping, including the one you are on.
 
 ```rust
-use datatable::{Table, Value};
+use flextable::{Table, Value};
 
 let t = Table::new();
 for i in 1..=5 {
@@ -56,7 +56,7 @@ Assigning to existing fields and clearing fields is always safe. Adding *new* ke
 `ipairs` walks positions 1, 2, 3, … and stops at the first nil. With holes, it can stop before `len()`.
 
 ```rust
-use datatable::{table, Value};
+use flextable::{table, Value};
 
 let t = table!["a", "b", "c"];
 let items: Vec<(i64, Value)> = t.ipairs().collect();
@@ -71,7 +71,7 @@ assert_eq!(t.ipairs().count(), 1);
 `pairs` returns owned keys and values, which means a reference-count update for every string and table. When you only read, borrow instead:
 
 ```rust
-use datatable::table;
+use flextable::table;
 
 let t = table! { "a" => 1, "b" => 2, "c" => 3 };
 
@@ -90,7 +90,7 @@ assert_eq!(longest, 1);
 [`next`](/api/table/#next) is the stateless form: pass the previous key (or nil to start) and get the following field. Each call is O(1), and it survives clearing the field it was given.
 
 ```rust
-use datatable::{table, Value};
+use flextable::{table, Value};
 
 let t = table! { "x" => 1, "y" => 2 };
 let mut key = Value::Nil;

@@ -58,7 +58,7 @@ export function TopBar() {
               <rect x="7" y="20.5" width="7.5" height="3.5" rx="1.2" className="logo-cell" />
               <rect x="17.5" y="20.5" width="7.5" height="3.5" rx="1.2" className="logo-cell" />
             </svg>
-            <span className="brand-name">datatable</span>
+            <span className="brand-name">flextable</span>
           </Link>
           <span className="version">v{VERSION}</span>
           <nav className="topnav" aria-label="Primary">
@@ -86,7 +86,7 @@ export function TopBar() {
               <span className="search-label">Search docs</span>
               <kbd className="search-kbd">{mac ? "⌘K" : "Ctrl K"}</kbd>
             </button>
-            <a className="icon-button" href={GITHUB} aria-label="datatable on GitHub">
+            <a className="icon-button" href={GITHUB} aria-label="flextable on GitHub">
               <svg viewBox="0 0 16 16" aria-hidden="true">
                 <path
                   fill="currentColor"

@@ -68,7 +68,7 @@ samples.forEach((s, i) => {
 fs.mkdirSync(path.join(crate, "src"), { recursive: true });
 fs.writeFileSync(
   path.join(crate, "Cargo.toml"),
-  '[package]\nname = "doc-samples"\nversion = "0.0.0"\nedition = "2021"\npublish = false\n\n[dependencies]\ndatatable = { path = "../.." }\n\n[workspace]\n',
+  '[package]\nname = "doc-samples"\nversion = "0.0.0"\nedition = "2021"\npublish = false\n\n[dependencies]\nflextable = { path = "../.." }\n\n[workspace]\n',
 );
 fs.writeFileSync(path.join(crate, "src", "lib.rs"), modules.join("\n") + "\n" + tests.join("\n"));
 

@@ -13,12 +13,12 @@ Every Rust example in these docs is compiled and run against the library, so the
 
 ## Add the dependency
 
-`datatable` is not published on crates.io yet, so add it as a Git dependency:
+`flextable` is not published on crates.io yet, so add it as a Git dependency:
 
 ```toml
 # file: Cargo.toml
 [dependencies]
-datatable = { git = "https://github.com/imhasnainizhar/datatable" }
+flextable = { git = "https://github.com/imhasnainizhar/datatable" }
 ```
 
 Cargo records the exact commit in `Cargo.lock`, so builds stay reproducible. To pin a revision explicitly, add `rev`:
@@ -26,13 +26,13 @@ Cargo records the exact commit in `Cargo.lock`, so builds stay reproducible. To 
 ```toml
 # file: Cargo.toml
 [dependencies]
-datatable = { git = "https://github.com/imhasnainizhar/datatable", rev = "COMMIT_SHA" }
+flextable = { git = "https://github.com/imhasnainizhar/datatable", rev = "COMMIT_SHA" }
 ```
 
 Or let Cargo edit the file for you:
 
 ```bash
-cargo add datatable --git https://github.com/imhasnainizhar/datatable
+cargo add flextable --git https://github.com/imhasnainizhar/datatable
 ```
 
 ## Check that it works
@@ -41,7 +41,7 @@ Replace `src/main.rs` with:
 
 ```rust
 // file: src/main.rs
-use datatable::Table;
+use flextable::Table;
 
 fn main() {
     let t = Table::new();

@@ -7,12 +7,12 @@ pub struct TableRef<'a> { /* private */ }
 A read-only view of a table, returned by [`Table::borrow`](/api/table/#borrow). Everything it hands out is a plain reference into the table, so reads cost no reference-count updates and no copies. While a `TableRef` is alive, any attempt to modify the table panics; drop it (or let it go out of scope) before writing.
 
 ```rust
-use datatable::{table, Value};
+use flextable::{table, Value};
 
-let t = table! { "name" => "datatable", "stars" => 5 };
+let t = table! { "name" => "flextable", "stars" => 5 };
 {
     let view = t.borrow();
-    assert_eq!(view.get("name").and_then(Value::as_str), Some("datatable"));
+    assert_eq!(view.get("name").and_then(Value::as_str), Some("flextable"));
     assert_eq!(view.iter().count(), 2);
 }
 t.set("stars", 6)?;   // fine: the view is gone
@@ -95,7 +95,7 @@ pub struct Iter<'a>  // Iterator<Item = (KeyRef<'a>, &'a Value)>, Clone
 Returned by [`TableRef::iter`](#iter). Borrows the table for `'a` and yields references, so it never clones. Its `size_hint` gives an upper bound only.
 
 ```rust
-use datatable::{table, KeyRef};
+use flextable::{table, KeyRef};
 
 let t = table![10, 20];
 t.set("x", 30)?;
