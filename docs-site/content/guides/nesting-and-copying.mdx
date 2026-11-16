@@ -1,0 +1,99 @@
+## Nesting
+
+Store a table as a value to build trees, documents and object graphs. What is stored is a handle: the nested table is shared, not copied.
+
+```rust
+use datatable::{table, Value};
+
+let config = table! {
+    "name" => "server",
+    "ports" => table![80, 443],
+    "tls" => table! { "enabled" => true },
+};
+
+let ports = config.get("ports");
+let ports = ports.as_table().unwrap();
+ports.push(8080)?;
+assert_eq!(config.get("ports").as_table().unwrap().len(), 3);
+```
+
+A `Vec` converts straight into a nested sequence: `t.set("tags", vec!["a", "b"])`.
+
+### Reading deep paths
+
+Each level is a `get` plus `as_table`. A small helper keeps it readable:
+
+```rust
+use datatable::{table, Table, Value};
+
+fn path(t: &Table, keys: &[&str]) -> Value {
+    let mut current = Value::from(t);
+    for k in keys {
+        current = match current.as_table() {
+            Some(t) => t.get(*k),
+            None => return Value::Nil,
+        };
+    }
+    current
+}
+
+let doc = table! { "a" => table! { "b" => table! { "c" => 42 } } };
+assert_eq!(path(&doc, &["a", "b", "c"]), Value::from(42));
+assert_eq!(path(&doc, &["a", "x", "c"]), Value::Nil);
+```
+
+## Copying
+
+| You want | Use | Nested tables |
+| --- | --- | --- |
+| another handle to the same table | `clone()` | shared |
+| a new table, same top-level contents | [`copy()`](/api/table/#copy) | shared |
+| a fully independent tree | [`deep_clone()`](/api/table/#deep_clone) | copied |
+
+```rust
+use datatable::table;
+
+let inner = table![1];
+let outer = table! { "inner" => &inner };
+
+let shallow = outer.copy();
+let deep = outer.deep_clone();
+
+inner.push(2)?;
+assert_eq!(shallow.get("inner").as_table().unwrap().len(), 2); // shared
+assert_eq!(deep.get("inner").as_table().unwrap().len(), 1);    // independent
+```
+
+### Cycles and shared children
+
+`deep_clone` copies each reachable table exactly once. Two fields pointing to the same child still point to one (new) child in the copy, and a table that contains itself is reproduced instead of recursing forever. Tables used as keys are copied the same way.
+
+```rust
+use datatable::{table, Table};
+
+let node = Table::new();
+node.set("self", &node)?;
+let copy = node.deep_clone();
+assert_eq!(copy.get("self").as_table().unwrap(), &copy);
+# node.clear();
+# copy.clear();
+```
+
+## Identity
+
+Tables compare by identity: `==` asks "same table?", never "same contents?". That makes them usable as keys and in `HashSet`s. To compare contents, iterate both or compare `dump()` output.
+
+```rust
+use datatable::table;
+
+let a = table![1, 2];
+let b = table![1, 2];
+assert_ne!(a, b);
+assert_eq!(a.dump(), b.dump());   // "{1, 2}"
+```
+
+[`dump`](/api/table/#dump) renders a Lua-style constructor such as `{1, 2, name = "x"}`, which is handy for debugging and tests.
+
+<Callout type="warning" title="Cycles and memory">
+Tables are reference counted. A table that contains itself, directly or through other tables, is never freed until the cycle is broken, for example by calling `clear()` on one of them.
+</Callout>

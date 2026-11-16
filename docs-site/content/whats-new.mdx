@@ -1,0 +1,39 @@
+`datatable` 0.1.0 is the first release. It ships the complete table type, a sequence and traversal library modelled on Lua's, and a round of low-level performance work. The crate is free of `unsafe` code and has one dependency, `hashbrown`.
+
+## Highlights
+
+- **[`Table`](/api/table/)**: one shared, nestable container for sequences, records, dictionaries and sets.
+- **[Sequence library](/guides/sequences/)**: `push`, `pop`, `insert`, `remove`, `concat`, `pack`, `unpack`, `move_within`, `move_to`, `sort`, `sort_by`, `reverse`.
+- **[Traversal](/guides/iteration/)**: `pairs`, `ipairs` and an O(1) `next`, all safe to use while clearing fields, with a deterministic order.
+- **[Zero-clone reads](/api/table-ref/)**: `borrow()` returns a `TableRef` whose `get` and `iter` return references, plus `get_integer`, `get_number` and `get_bool`.
+- **[Copies](/guides/nesting-and-copying/)**: shallow `copy()` and a cycle-safe `deep_clone()` that preserves shared sub-tables.
+- **[`table!` macro](/api/table-macro/)** for literal construction.
+
+## Performance
+
+The table keeps integer keys `1..=n` in an array and everything else in an insertion-ordered hash part, so `len()` is O(1), appends are a vector push, and lookups never allocate. Hot paths were then tuned at the machine-code level. On small, in-cache tables (ns per operation, i5-1240P):
+
+| Operation | Before tuning | 0.1.0 |
+| --- | ---: | ---: |
+| `set(i)` overwrite | 6.5 | 1.1 |
+| `pop` | ~8 | ~1 |
+| `pairs()` per field | 19.8 | 4.7 |
+| record `set`, string key | 10.1 | 7.8 |
+| sort floats, per element | 31.5 | 12.1 |
+| sort strings, per element | 55.7 | 37.0 |
+
+Full numbers and comparisons with `Vec` and `HashMap` are on the [Performance](/guides/performance/) page.
+
+## Quality
+
+- 40 tests: unit, integration and doc tests, including randomized runs that compare a table against a plain `HashMap` and `Vec` over thousands of operations.
+- CI on Linux and Windows with `rustfmt` and `clippy -D warnings`.
+- Every example in these docs is compiled and run.
+
+## Not in this release
+
+Metatables, weak tables and function values are not implemented. See [Coming from Lua](/guides/coming-from-lua/) for every difference from Lua tables.
+
+## Upgrading
+
+There is nothing to upgrade from. To start, see [Installation](/getting-started/installation/).

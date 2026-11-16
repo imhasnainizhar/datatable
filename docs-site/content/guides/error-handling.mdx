@@ -1,0 +1,70 @@
+Table operations fail in exactly five ways, each a variant of [`Error`](/api/error/). Reads never fail; they return nil or `None` instead.
+
+## The five errors
+
+| Variant | Raised by | Cause |
+| --- | --- | --- |
+| `NilKey` | `set` and friends | the key was nil |
+| `InvalidKey` | `set`, `next` | the key was NaN, or `next` got a key not in the table |
+| `TypeMismatch` | `concat`, `concat_range` | an element was not a string or a number |
+| `Incomparable` | `sort`, `Value::try_cmp` | the values have no defined order |
+| `PositionOutOfBounds` | `insert`, `remove`, `move_within`, `move_to` | a position outside the allowed range |
+
+```rust
+use datatable::{table, Error, Value};
+
+let t = table![1, 2, 3];
+assert_eq!(t.set(Value::Nil, 1), Err(Error::NilKey));
+assert_eq!(t.set(f64::NAN, 1), Err(Error::InvalidKey));
+assert_eq!(t.remove(7), Err(Error::PositionOutOfBounds { position: 7, len: 3 }));
+
+t.push(true)?;
+assert_eq!(t.concat(","), Err(Error::TypeMismatch { expected: "string or number", found: "boolean" }));
+assert_eq!(t.sort(), Err(Error::Incomparable { left: "integer", right: "boolean" }));
+```
+
+A failed operation leaves the table unchanged.
+
+## Using `?`
+
+`Error` implements `std::error::Error`, so it works with `?` in functions returning `datatable::Result`, `Box<dyn Error>`, or error types from crates like `anyhow`.
+
+```rust
+use datatable::{Result, Table};
+
+fn build() -> Result<Table> {
+    let t = Table::new();
+    t.set("id", 1)?;
+    t.push("first")?;
+    Ok(t)
+}
+
+let t = build()?;
+assert_eq!(t.field_count(), 2);
+```
+
+## Messages
+
+`Display` produces short, human-readable messages:
+
+```rust
+use datatable::Error;
+
+assert_eq!(Error::NilKey.to_string(), "nil cannot be used as a table key");
+assert_eq!(
+    Error::PositionOutOfBounds { position: 9, len: 3 }.to_string(),
+    "position 9 out of bounds (length 3)"
+);
+```
+
+## Infallible in practice
+
+Several methods return `Result` only for signature consistency and never fail with the inputs most code uses: `push` never fails, and `set` with a string, integer or boolean key cannot fail. Where you know that, `.unwrap()` or `.expect()` is reasonable.
+
+## Panics
+
+A few things panic instead of returning an error, because they are programming mistakes rather than data problems:
+
+- modifying a table while it is borrowed (inside `for_each`, `with_slice`, a `sort_by` comparator, or while a `TableRef` is alive);
+- `Table::from_pairs` and the `table! { k => v }` form with a nil or NaN key (use `set` to handle that case instead);
+- a `sort_by` comparator that is not a total order may panic, as with `slice::sort_by`.

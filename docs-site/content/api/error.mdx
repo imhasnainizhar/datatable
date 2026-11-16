@@ -1,0 +1,45 @@
+## `Error`
+
+```rust-sig
+pub enum Error {
+    NilKey,
+    InvalidKey,
+    TypeMismatch { expected: &'static str, found: &'static str },
+    Incomparable { left: &'static str, right: &'static str },
+    PositionOutOfBounds { position: i64, len: usize },
+}
+```
+
+**Implements:** `Debug`, `Clone`, `PartialEq`, `Eq`, `Display`, `std::error::Error`.
+
+### Variants
+
+| Variant | Meaning | `Display` |
+| --- | --- | --- |
+| `NilKey` | nil was used as a key | `nil cannot be used as a table key` |
+| `InvalidKey` | a NaN key, or a key passed to `next` that is not in the table | `value cannot be used as a table key` |
+| `TypeMismatch` | an operation needed another type (`concat` on a non-string, non-number element) | `type mismatch: expected …, found …` |
+| `Incomparable` | two values have no order (`sort`, `try_cmp`) | `attempt to compare … with …` |
+| `PositionOutOfBounds` | a sequence position outside the allowed range; `position` is the 1-based position given, `len` the sequence length at the time | `position … out of bounds (length …)` |
+
+Type names in `TypeMismatch` and `Incomparable` come from [`Value::type_name`](/api/value/#type_name).
+
+## `Result`
+
+```rust-sig
+pub type Result<T> = std::result::Result<T, Error>;
+```
+
+Returned by every fallible table operation. See [Error Handling](/guides/error-handling/) for which methods return which errors.
+
+```rust
+use datatable::{table, Error};
+
+let t = table!["a"];
+match t.insert(5, "b") {
+    Err(Error::PositionOutOfBounds { position, len }) => {
+        assert_eq!((position, len), (5, 1));
+    }
+    other => panic!("unexpected: {other:?}"),
+}
+```

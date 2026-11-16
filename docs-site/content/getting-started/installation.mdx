@@ -1,0 +1,66 @@
+## Requirements
+
+- A Rust toolchain with Cargo. The crate uses the 2021 edition and is tested on current stable Rust on Linux and Windows.
+- No system libraries. The only dependency is [`hashbrown`](https://crates.io/crates/hashbrown), which Cargo fetches for you.
+
+## Add the dependency
+
+`datatable` is not published on crates.io yet, so add it as a Git dependency:
+
+```toml
+# file: Cargo.toml
+[dependencies]
+datatable = { git = "https://github.com/imhasnainizhar/datatable" }
+```
+
+Cargo records the exact commit in `Cargo.lock`, so builds stay reproducible. To pin a revision explicitly, add `rev`:
+
+```toml
+# file: Cargo.toml
+[dependencies]
+datatable = { git = "https://github.com/imhasnainizhar/datatable", rev = "COMMIT_SHA" }
+```
+
+Or let Cargo edit the file for you:
+
+```bash
+cargo add datatable --git https://github.com/imhasnainizhar/datatable
+```
+
+## Check that it works
+
+Replace `src/main.rs` with:
+
+```rust
+// file: src/main.rs
+use datatable::Table;
+
+fn main() {
+    let t = Table::new();
+    t.push("hello").unwrap();
+    t.push("table").unwrap();
+    println!("{}", t.concat(", ").unwrap());
+}
+```
+
+Then run it:
+
+```bash
+cargo run
+```
+
+```text
+hello, table
+```
+
+## What to import
+
+Everything is re-exported from the crate root. Most code needs only the first three:
+
+| Import | Use it for |
+| --- | --- |
+| [`Table`](/api/table/) | The table itself. |
+| [`Value`](/api/value/) | A dynamic value read from or stored in a table. |
+| [`table!`](/api/table-macro/) | Building tables with literal syntax. |
+| [`Error`, `Result`](/api/error/) | Handling the failures a table operation can report. |
+| [`Key`, `KeyRef`, `AsKey`](/api/key/) | Working with keys directly, which most code never needs. |

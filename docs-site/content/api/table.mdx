@@ -1,0 +1,488 @@
+```rust-sig
+pub struct Table { /* private */ }
+```
+
+A shared handle to a table. Cloning a `Table` creates another handle to the same storage; use [`copy`](#copy) or [`deep_clone`](#deep_clone) for a new table. Tables compare and hash by identity. Every method takes `&self`.
+
+**Implements:** `Clone`, `Default`, `Debug`, `PartialEq`, `Eq`, `Hash` (identity), `FromIterator<Value>`, `FromIterator<(Key, Value)>`, `Extend<Value>`, `Extend<(Key, Value)>`, `IntoIterator for &Table`.
+
+## Construction
+
+### `new`
+
+```rust-sig
+pub fn new() -> Table
+```
+
+<Badges items={["O(1)"]} />
+
+An empty table. Allocates only the shared handle; the array and hash parts allocate on first insert. Same as `Table::default()` and `table![]`.
+
+### `with_capacity`
+
+```rust-sig
+pub fn with_capacity(narray: usize, nhash: usize) -> Table
+```
+
+An empty table with room for `narray` sequence elements and `nhash` other fields.
+
+### `from_seq`
+
+```rust-sig
+pub fn from_seq<I, V>(values: I) -> Table
+where I: IntoIterator<Item = V>, V: Into<Value>
+```
+
+A sequence table from values, like `{a, b, c}`. Nil values become holes; trailing nils are dropped. `Table: FromIterator<Value>` does the same, so `collect()` works.
+
+```rust
+use datatable::Table;
+
+let t = Table::from_seq(["a", "b"]);
+assert_eq!(t.len(), 2);
+```
+
+### `from_pairs`
+
+```rust-sig
+pub fn from_pairs<I, K, V>(pairs: I) -> Table
+where I: IntoIterator<Item = (K, V)>, K: AsKey, V: Into<Value>
+```
+
+<Badges items={["panics on a nil or NaN key"]} />
+
+A table from key/value pairs, like `{k1 = v1, k2 = v2}`.
+
+```rust
+use datatable::Table;
+
+let t = Table::from_pairs([("x", 1), ("y", 2)]);
+assert_eq!(t.get_integer("y"), Some(2));
+```
+
+### `pack`
+
+```rust-sig
+pub fn pack<I, V>(values: I) -> Table
+where I: IntoIterator<Item = V>, V: Into<Value>
+```
+
+Like `from_seq`, plus a field `"n"` holding the number of values, so trailing nils are counted.
+
+### `copy`
+
+```rust-sig
+pub fn copy(&self) -> Table
+```
+
+<Badges items={["O(n)"]} />
+
+A shallow copy: a new table with the same keys and values. Nested tables are shared. No key is re-hashed.
+
+### `deep_clone`
+
+```rust-sig
+pub fn deep_clone(&self) -> Table
+```
+
+<Badges items={["O(n)"]} />
+
+A deep copy of every table reachable through keys and values. Each table is copied once, so shared sub-tables stay shared in the copy and cycles are reproduced. See [Nesting and Copying](/guides/nesting-and-copying/).
+
+## Field access
+
+### `get`
+
+```rust-sig
+pub fn get<K: AsKey>(&self, key: K) -> Value
+```
+
+<Badges items={["O(1)"]} />
+
+`t[key]`. Returns `Value::Nil` for missing fields and for keys that can never be stored (nil, NaN). Never allocates; returns a clone (a reference-count increment for strings and tables).
+
+### `set`
+
+```rust-sig
+pub fn set<K: AsKey, V: Into<Value>>(&self, key: K, value: V) -> Result<()>
+```
+
+<Badges items={["O(1) amortized"]} />
+
+`t[key] = value`. A nil value deletes the field. Errors with `NilKey` or `InvalidKey` (NaN) only. Overwriting an existing field never allocates.
+
+```rust
+use datatable::{Table, Value};
+
+let t = Table::new();
+t.set("k", 1)?;
+t.set("k", Value::Nil)?;
+assert!(t.is_empty());
+```
+
+### `get_integer`
+
+```rust-sig
+pub fn get_integer<K: AsKey>(&self, key: K) -> Option<i64>
+```
+
+The field as an integer without cloning. `Some` for integers and for floats holding an exact integer.
+
+### `get_number`
+
+```rust-sig
+pub fn get_number<K: AsKey>(&self, key: K) -> Option<f64>
+```
+
+The field as a float without cloning. Integers convert.
+
+### `get_bool`
+
+```rust-sig
+pub fn get_bool<K: AsKey>(&self, key: K) -> Option<bool>
+```
+
+The field as a boolean without cloning. `None` for any other type.
+
+### `contains_key`
+
+```rust-sig
+pub fn contains_key<K: AsKey>(&self, key: K) -> bool
+```
+
+Whether `t[key]` is not nil.
+
+### `get_field`
+
+```rust-sig
+pub fn get_field(&self, name: &str) -> Value
+```
+
+Record-style alias for `get` with a string key (`t.name`).
+
+### `set_field`
+
+```rust-sig
+pub fn set_field(&self, name: &str, value: impl Into<Value>) -> Result<()>
+```
+
+Record-style alias for `set` with a string key. Never fails in practice.
+
+### `borrow`
+
+```rust-sig
+pub fn borrow(&self) -> TableRef<'_>
+```
+
+A read-only view whose methods return references instead of clones. Modifying the table while the view is alive panics. See [`TableRef`](/api/table-ref/).
+
+## Sets
+
+### `set_add`
+
+```rust-sig
+pub fn set_add<K: AsKey>(&self, member: K) -> Result<()>
+```
+
+`t[member] = true`.
+
+### `set_contains`
+
+```rust-sig
+pub fn set_contains<K: AsKey>(&self, member: K) -> bool
+```
+
+Whether `t[member]` is truthy (not nil and not `false`).
+
+### `set_remove`
+
+```rust-sig
+pub fn set_remove<K: AsKey>(&self, member: K) -> bool
+```
+
+Removes the field and returns whether it was present.
+
+## Size and capacity
+
+### `len`
+
+```rust-sig
+pub fn len(&self) -> usize
+```
+
+<Badges items={["O(1)"]} />
+
+Lua's `#t`: the length of the sequence. With holes, a border: `t[len]` is set and `t[len + 1]` is nil.
+
+### `is_empty`
+
+```rust-sig
+pub fn is_empty(&self) -> bool
+```
+
+Whether the table has no fields at all. `{x = 1}` has `len() == 0` but is not empty.
+
+### `field_count`
+
+```rust-sig
+pub fn field_count(&self) -> usize
+```
+
+<Badges items={["O(1)"]} />
+
+The number of non-nil fields in both parts.
+
+### `clear`
+
+```rust-sig
+pub fn clear(&self)
+```
+
+Removes every field and keeps the allocated capacity.
+
+### `reserve`
+
+```rust-sig
+pub fn reserve(&self, narray: usize, nhash: usize)
+```
+
+Reserves room for at least `narray` more sequence elements and `nhash` more other fields.
+
+### `shrink_to_fit`
+
+```rust-sig
+pub fn shrink_to_fit(&self)
+```
+
+Releases unused capacity and reclaims slots of removed fields. Do not call it in the middle of a [`next`](#next) traversal, because it can invalidate the key you would resume from.
+
+## Sequence operations
+
+### `push`
+
+```rust-sig
+pub fn push(&self, value: impl Into<Value>) -> Result<()>
+```
+
+<Badges items={["O(1) amortized"]} />
+
+Appends: `t[#t + 1] = value`. Pushing nil does nothing. Never fails.
+
+### `pop`
+
+```rust-sig
+pub fn pop(&self) -> Value
+```
+
+<Badges items={["O(1)"]} />
+
+Removes and returns the last element, or nil if the sequence is empty. Never touches key 0.
+
+### `insert`
+
+```rust-sig
+pub fn insert(&self, pos: i64, value: impl Into<Value>) -> Result<()>
+```
+
+<Badges items={["O(n)"]} />
+
+Inserts at `pos`, shifting `t[pos..=len]` up by one. `pos` must be in `1..=len() + 1`, otherwise `PositionOutOfBounds`.
+
+### `remove`
+
+```rust-sig
+pub fn remove(&self, pos: i64) -> Result<Value>
+```
+
+<Badges items={["O(n)"]} />
+
+Removes and returns `t[pos]`, shifting later elements down. `pos` must be in `1..=len() + 1` (`len() + 1` returns nil), or `0` when the sequence is empty, which removes key 0.
+
+### `concat`
+
+```rust-sig
+pub fn concat(&self, sep: &str) -> Result<String>
+```
+
+<Badges items={["O(n)"]} />
+
+Joins the sequence with `sep`. Every element must be a string or a number, otherwise `TypeMismatch`. Whole-number floats keep a `.0`.
+
+### `concat_range`
+
+```rust-sig
+pub fn concat_range(&self, sep: &str, i: i64, j: i64) -> Result<String>
+```
+
+Joins `t[i]` through `t[j]`. An empty string when `i > j`. A nil element in the range is a `TypeMismatch`.
+
+### `unpack`
+
+```rust-sig
+pub fn unpack(&self) -> Vec<Value>
+```
+
+The sequence `t[1..=len]` as a vector (holes included as nil).
+
+### `unpack_range`
+
+```rust-sig
+pub fn unpack_range(&self, i: i64, j: i64) -> Vec<Value>
+```
+
+`t[i]` through `t[j]`, with nil for missing fields. Empty when `i > j`.
+
+### `move_within`
+
+```rust-sig
+pub fn move_within(&self, f: i64, e: i64, pos: i64) -> Result<()>
+```
+
+<Badges items={["O(e - f)"]} />
+
+Copies `t[f..=e]` to `t[pos..]`. Overlapping ranges are handled. Nothing happens when `e < f`. Errors with `PositionOutOfBounds` if the range or destination would overflow `i64`.
+
+### `move_to`
+
+```rust-sig
+pub fn move_to(&self, f: i64, e: i64, pos: i64, dest: &Table) -> Result<()>
+```
+
+Copies `t[f..=e]` into `dest[pos..]`. Appending a hole-free range to `dest` is a single bulk copy. When `dest` is this table, behaves as `move_within`.
+
+### `sort`
+
+```rust-sig
+pub fn sort(&self) -> Result<()>
+```
+
+<Badges items={["O(n log n)"]} />
+
+Sorts the sequence ascending, in place, not stable. All elements must be numbers (integers and floats mix, compared exactly; NaN sorts last) or all strings (byte order). Otherwise `Incomparable`, with the table unchanged.
+
+### `sort_by`
+
+```rust-sig
+pub fn sort_by<F>(&self, compare: F)
+where F: FnMut(&Value, &Value) -> Ordering
+```
+
+<Badges items={["O(n log n)", "panics if compare touches the table"]} />
+
+Stable sort with a comparator, which must be a total order.
+
+### `sort_unstable_by`
+
+```rust-sig
+pub fn sort_unstable_by<F>(&self, compare: F)
+where F: FnMut(&Value, &Value) -> Ordering
+```
+
+Like `sort_by`, not stable, and allocates nothing.
+
+### `reverse`
+
+```rust-sig
+pub fn reverse(&self)
+```
+
+Reverses the sequence in place.
+
+### `with_slice`
+
+```rust-sig
+pub fn with_slice<R>(&self, f: impl FnOnce(&[Value]) -> R) -> R
+```
+
+<Badges items={["panics if f modifies the table"]} />
+
+Runs `f` on the sequence as a borrowed slice. Slice index `i` is position `i + 1`.
+
+## Traversal
+
+### `pairs`
+
+```rust-sig
+pub fn pairs(&self) -> Pairs
+```
+
+Every field as `(Key, Value)`: sequence keys ascending, then other keys in insertion order. Holds no borrow between items; fields may be assigned or cleared during the loop. See [Iteration](/guides/iteration/).
+
+### `ipairs`
+
+```rust-sig
+pub fn ipairs(&self) -> IPairs
+```
+
+`(1, t[1]), (2, t[2]), …` up to the first nil.
+
+### `keys`
+
+```rust-sig
+pub fn keys(&self) -> impl Iterator<Item = Key>
+```
+
+All keys in `pairs` order.
+
+### `values`
+
+```rust-sig
+pub fn values(&self) -> impl Iterator<Item = Value>
+```
+
+All values in `pairs` order.
+
+### `next`
+
+```rust-sig
+pub fn next(&self, key: &Value) -> Result<Option<(Key, Value)>>
+```
+
+<Badges items={["O(1)"]} />
+
+The field after `key` in traversal order, or the first field when `key` is nil. `Ok(None)` at the end. `InvalidKey` if `key` is not in the table. Works after the field at `key` has been cleared.
+
+### `for_each`
+
+```rust-sig
+pub fn for_each(&self, f: impl FnMut(&Key, &Value))
+```
+
+<Badges items={["panics if f modifies the table"]} />
+
+Visits every field by reference without cloning. The fastest full traversal.
+
+## Identity and debugging
+
+### `ptr_eq`
+
+```rust-sig
+pub fn ptr_eq(&self, other: &Table) -> bool
+```
+
+Whether two handles point to the same table. Same as `==`.
+
+### `as_ptr`
+
+```rust-sig
+pub fn as_ptr(&self) -> *const ()
+```
+
+An address unique to this table while it is alive. Useful as an identity in logs.
+
+### `dump`
+
+```rust-sig
+pub fn dump(&self) -> String
+```
+
+Renders the contents as a Lua-style constructor for debugging. Tables already being printed show as `<cycle>`.
+
+```rust
+use datatable::table;
+
+let t = table![1, "two"];
+t.set("k", 1.5)?;
+t.set("with space", true)?;
+assert_eq!(t.dump(), r#"{1, "two", k = 1.5, ["with space"] = true}"#);
+```
