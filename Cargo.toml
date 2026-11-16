@@ -1,5 +1,5 @@
 [package]
-name = "data-table"
+name = "datatable"
 version = "0.1.0"
 edition = "2021"
 description = "A Lua-inspired table: one flexible structure for arrays, dictionaries, objects, records, sets, and modules."

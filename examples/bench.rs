@@ -8,7 +8,7 @@
 //! floor rather than a fair fight: a table stores dynamically typed values
 //! behind a shared handle.
 
-use data_table::{Table, Value};
+use datatable::{Table, Value};
 use std::collections::HashMap;
 use std::hint::black_box;
 use std::time::Instant;
@@ -79,7 +79,14 @@ fn small() {
 
     // A record with a handful of fields: the "object" use case.
     let names = [
-        "id", "name", "position", "velocity", "health", "inventory", "target", "state",
+        "id",
+        "name",
+        "position",
+        "velocity",
+        "health",
+        "inventory",
+        "target",
+        "state",
     ];
     let obj = Table::new();
     for (i, n) in names.iter().enumerate() {
@@ -123,7 +130,11 @@ fn small() {
         let mut len = 0;
         let view = obj.borrow();
         for _ in 0..2_000_000 {
-            len += view.get(black_box("label")).and_then(Value::as_str).unwrap().len();
+            len += view
+                .get(black_box("label"))
+                .and_then(Value::as_str)
+                .unwrap()
+                .len();
         }
         len
     });
@@ -196,7 +207,11 @@ fn main() {
             t.set(i + 1, i).unwrap();
         }
     });
-    time("table  ipairs", N, || t.ipairs().map(|(_, v)| v.as_integer().unwrap()).sum::<i64>());
+    time("table  ipairs", N, || {
+        t.ipairs()
+            .map(|(_, v)| v.as_integer().unwrap())
+            .sum::<i64>()
+    });
     time("table  with_slice sum", N, || {
         t.with_slice(|s| s.iter().map(|v| v.as_integer().unwrap()).sum::<i64>())
     });
@@ -254,7 +269,10 @@ fn main() {
     });
     time("table  pairs", N, || d.pairs().count());
     time("table  borrow().iter", N, || {
-        d.borrow().iter().map(|(_, v)| v.as_integer().unwrap()).sum::<i64>()
+        d.borrow()
+            .iter()
+            .map(|(_, v)| v.as_integer().unwrap())
+            .sum::<i64>()
     });
     time("table  for_each", N, || {
         let mut sum = 0;

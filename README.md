@@ -1,13 +1,13 @@
-# rustable (`data-table`)
+# datatable
 
 A Lua-inspired **table**: one flexible data structure for arrays, dictionaries, objects, records, sets, and modules.
 
 ```rust
-use data_table::{table, Table, Value};
+use datatable::{table, Table, Value};
 
 let t = Table::new();
 t.push("first").unwrap();             // t[1] = "first"
-t.set("name", "rustable").unwrap();   // t.name = "rustable"
+t.set("name", "datatable").unwrap();   // t.name = "datatable"
 assert_eq!(t.get(1), Value::from("first"));
 assert_eq!(t.len(), 1);               // #t
 

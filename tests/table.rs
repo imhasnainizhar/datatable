@@ -2,7 +2,7 @@
 // map key.
 #![allow(clippy::mutable_key_type)]
 
-use data_table::{table, Error, Key, Table, Value};
+use datatable::{table, Error, Key, Table, Value};
 use std::cmp::Ordering;
 use std::collections::HashMap;
 
@@ -50,7 +50,11 @@ fn all_key_types_coexist() {
     assert_eq!(t.get(-3), Value::from("neg"));
     assert_eq!(t.get(0), Value::from("zero"));
     assert_eq!(t.get(&k), Value::from("tbl"));
-    assert_eq!(t.get(Table::new()), Value::Nil, "tables are keyed by identity");
+    assert_eq!(
+        t.get(Table::new()),
+        Value::Nil,
+        "tables are keyed by identity"
+    );
     assert_eq!(t.get(Value::from("owned")), Value::from(1));
     assert_eq!(t.len(), 0);
     assert_eq!(t.field_count(), 6);
@@ -65,7 +69,10 @@ fn integer_float_equality_is_exact() {
         Value::from(big).lua_cmp(&Value::from((1_i64 << 53) as f64)),
         Some(Ordering::Greater)
     );
-    assert_eq!(Value::from(1).lua_cmp(&Value::from(1.5)), Some(Ordering::Less));
+    assert_eq!(
+        Value::from(1).lua_cmp(&Value::from(1.5)),
+        Some(Ordering::Less)
+    );
     assert_eq!(Value::from(1).lua_cmp(&Value::from("1")), None);
 }
 
@@ -134,7 +141,10 @@ fn insert_and_remove_shift() {
     assert_eq!(ints(&t), [0, 1, 2, 3, 4, 5]);
     assert_eq!(
         t.insert(8, 9),
-        Err(Error::PositionOutOfBounds { position: 8, len: 6 })
+        Err(Error::PositionOutOfBounds {
+            position: 8,
+            len: 6
+        })
     );
     assert!(t.insert(0, 9).is_err());
 
@@ -171,7 +181,10 @@ fn concat() {
     t.push(true).unwrap();
     assert_eq!(
         t.concat(""),
-        Err(Error::TypeMismatch { expected: "string or number", found: "boolean" })
+        Err(Error::TypeMismatch {
+            expected: "string or number",
+            found: "boolean"
+        })
     );
     assert!(t.concat_range("", 1, 9).is_err(), "nil past the end");
 }
@@ -238,9 +251,16 @@ fn sort_numbers_and_strings() {
     let bad = table![1, "x"];
     assert_eq!(
         bad.sort(),
-        Err(Error::Incomparable { left: "integer", right: "string" })
+        Err(Error::Incomparable {
+            left: "integer",
+            right: "string"
+        })
     );
-    assert_eq!(bad.get(1), Value::from(1), "failed sort leaves the table alone");
+    assert_eq!(
+        bad.get(1),
+        Value::from(1),
+        "failed sort leaves the table alone"
+    );
     Table::new().sort().unwrap();
 }
 
@@ -357,8 +377,16 @@ fn record_view_and_nesting() {
     let inner = table! { "x" => 1 };
     let t = table! { "name" => "n", "pos" => &inner };
     assert_eq!(t.get_field("name"), Value::from("n"));
-    t.get_field("pos").as_table().unwrap().set_field("x", 2).unwrap();
-    assert_eq!(inner.get("x"), Value::from(2), "tables are shared references");
+    t.get_field("pos")
+        .as_table()
+        .unwrap()
+        .set_field("x", 2)
+        .unwrap();
+    assert_eq!(
+        inner.get("x"),
+        Value::from(2),
+        "tables are shared references"
+    );
 }
 
 #[test]
@@ -402,7 +430,10 @@ fn dump_and_display() {
     t.set("k", 1.5).unwrap();
     t.set("with space", true).unwrap();
     t.set(-1, 0).unwrap();
-    assert_eq!(t.dump(), r#"{1, "two", k = 1.5, ["with space"] = true, [-1] = 0}"#);
+    assert_eq!(
+        t.dump(),
+        r#"{1, "two", k = 1.5, ["with space"] = true, [-1] = 0}"#
+    );
     assert_eq!(Value::from(2.0).to_string(), "2.0");
     assert_eq!(Value::from("s").to_string(), "s");
     assert_eq!(format!("{:?}", Value::from("s")), "\"s\"");
@@ -443,7 +474,12 @@ fn borrowed_view_reads_without_cloning() {
         assert_eq!(view.get("name").and_then(Value::as_str), Some("n"));
         assert_eq!(view.get("missing"), None);
         assert_eq!(view.get(Value::Nil), None);
-        assert!(view.get("child").unwrap().as_table().unwrap().ptr_eq(&child));
+        assert!(view
+            .get("child")
+            .unwrap()
+            .as_table()
+            .unwrap()
+            .ptr_eq(&child));
         assert_eq!(view.as_slice().len(), 3);
         let keys: Vec<String> = view.iter().map(|(k, _)| k.to_key().to_string()).collect();
         assert_eq!(keys, ["1", "3", "name", "child", "99"]);
@@ -462,7 +498,15 @@ fn borrowed_view_reads_without_cloning() {
 #[test]
 fn sort_edge_cases() {
     // negative zero, infinities and both NaN signs
-    let t = table![f64::INFINITY, -0.0, 0.5, f64::NEG_INFINITY, -f64::NAN, f64::NAN, -2.5];
+    let t = table![
+        f64::INFINITY,
+        -0.0,
+        0.5,
+        f64::NEG_INFINITY,
+        -f64::NAN,
+        f64::NAN,
+        -2.5
+    ];
     t.sort().unwrap();
     assert_eq!(t.concat_range(" ", 1, 5).unwrap(), "-inf -2.5 -0.0 0.5 inf");
     assert!(t.get_number(6).unwrap().is_nan() && t.get_number(7).unwrap().is_nan());
@@ -476,7 +520,10 @@ fn sort_edge_cases() {
     let s = table!["prefix__b", "prefix__a", "a\0", "a", "", "prefix__", "b"];
     s.sort().unwrap();
     let got: Vec<String> = s.unpack().iter().map(|v| v.to_string()).collect();
-    assert_eq!(got, ["", "a", "a\0", "b", "prefix__", "prefix__a", "prefix__b"]);
+    assert_eq!(
+        got,
+        ["", "a", "a\0", "b", "prefix__", "prefix__a", "prefix__b"]
+    );
     assert_eq!(s.field_count(), 7);
 }
 
@@ -518,9 +565,15 @@ fn check(t: &Table, model: &HashMap<Key, Value>) {
     assert_eq!(t.is_empty(), model.is_empty());
     let len = t.len() as i64;
     if len > 0 {
-        assert!(model.contains_key(&Key::Integer(len)), "t[#t] must be non-nil");
+        assert!(
+            model.contains_key(&Key::Integer(len)),
+            "t[#t] must be non-nil"
+        );
     }
-    assert!(!model.contains_key(&Key::Integer(len + 1)), "t[#t + 1] must be nil");
+    assert!(
+        !model.contains_key(&Key::Integer(len + 1)),
+        "t[#t + 1] must be nil"
+    );
     let mut seen = 0;
     for (k, v) in t.pairs() {
         assert_eq!(model.get(&k), Some(&v), "pairs yielded a stale field {k}");
@@ -592,7 +645,10 @@ fn random_insert_remove_match_a_vec() {
             model.insert(pos, step);
         } else {
             let pos = rng.below(model.len() as u64) as usize;
-            assert_eq!(t.remove(pos as i64 + 1).unwrap(), Value::from(model.remove(pos)));
+            assert_eq!(
+                t.remove(pos as i64 + 1).unwrap(),
+                Value::from(model.remove(pos))
+            );
         }
     }
     assert_eq!(ints(&t), model);

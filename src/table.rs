@@ -792,7 +792,11 @@ impl Table {
             // All floats: sort the raw `f64`s. `total_cmp` agrees with Lua's
             // order on ordinary numbers and puts NaN last. Mixed
             // integer/float sequences need the exact comparison instead.
-            Kind::Num if a.iter().all(|v| matches!(v, Value::Number(n) if !n.is_sign_negative() || !n.is_nan())) => {
+            Kind::Num
+                if a.iter().all(
+                    |v| matches!(v, Value::Number(n) if !n.is_sign_negative() || !n.is_nan()),
+                ) =>
+            {
                 let mut nums: Vec<f64> = a
                     .iter()
                     .filter_map(|v| match v {
@@ -1012,11 +1016,11 @@ impl Table {
 /// to read many fields, or to read strings and nested tables.
 ///
 /// ```
-/// use data_table::{table, Value};
+/// use datatable::{table, Value};
 ///
-/// let t = table! { "name" => "rustable", "stars" => 5 };
+/// let t = table! { "name" => "datatable", "stars" => 5 };
 /// let view = t.borrow();
-/// assert_eq!(view.get("name").and_then(Value::as_str), Some("rustable"));
+/// assert_eq!(view.get("name").and_then(Value::as_str), Some("datatable"));
 /// assert_eq!(view.iter().count(), 2);
 /// ```
 pub struct TableRef<'a> {
@@ -1121,10 +1125,7 @@ fn concat_values<'a>(
     sep: &str,
 ) -> Result<String> {
     // Size the buffer once: exact for strings, a small guess for numbers.
-    let payload: usize = values
-        .clone()
-        .map(|v| v.as_str().map_or(8, str::len))
-        .sum();
+    let payload: usize = values.clone().map(|v| v.as_str().map_or(8, str::len)).sum();
     let mut out = String::with_capacity(payload + sep.len() * count.saturating_sub(1));
     for (i, v) in values.enumerate() {
         if i != 0 {

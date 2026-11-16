@@ -102,7 +102,10 @@ impl HashPart {
         let hash = self.hash_of(KeyRef::Integer(n));
         let entries = &self.entries;
         self.index
-            .find(hash, |&i| matches!(entries[i as usize].key, Key::Integer(k) if k == n))
+            .find(
+                hash,
+                |&i| matches!(entries[i as usize].key, Key::Integer(k) if k == n),
+            )
             .map(|&i| i as usize)
             .ok_or(hash)
     }

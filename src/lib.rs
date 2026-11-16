@@ -9,13 +9,13 @@
 //! - **modules** — a namespace of named fields
 //!
 //! ```
-//! use data_table::{table, Table, Value};
+//! use datatable::{table, Table, Value};
 //!
 //! let t = Table::new();
 //! t.push("first").unwrap();            // t[1]
-//! t.set("name", "rustable").unwrap();  // t.name
+//! t.set("name", "datatable").unwrap();  // t.name
 //! assert_eq!(t.len(), 1);
-//! assert_eq!(t.get("name"), Value::from("rustable"));
+//! assert_eq!(t.get("name"), Value::from("datatable"));
 //!
 //! let seq = table![3, 1, 2];
 //! seq.sort().unwrap();
@@ -48,7 +48,7 @@ pub use value::Value;
 /// Build a [`Table`] like a Lua table constructor.
 ///
 /// ```
-/// use data_table::table;
+/// use datatable::table;
 ///
 /// let empty = table![];
 /// let seq = table![1, "two", 3.0];           // {1, "two", 3.0}
